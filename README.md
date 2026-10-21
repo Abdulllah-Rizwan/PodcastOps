@@ -3,9 +3,9 @@
 A deliberately narrow vertical slice that proves one end-to-end spine of the
 **data → logic → action** pattern:
 
-1. **Data** — read public metadata for one real show from **YouTube + Spotify** into a
+1. **Data** — read public metadata for one real show from **YouTube + Apple Podcasts** into a
    staging area, then resolve + conform it into fused `Episode` objects (entity resolution).
-2. **Logic** — one read-only rule decides ("on Spotify, no YouTube clip yet").
+2. **Logic** — one read-only rule decides ("on Apple Podcasts, no YouTube clip yet").
 3. **Action** — one safe, logged, **mock-first** writeback to our own throwaway test channel.
 
 Governance lives in [`.specify/memory/constitution.md`](.specify/memory/constitution.md); the
@@ -16,7 +16,7 @@ full spec/plan/tasks are under [`specs/001-podcast-ops-slice/`](specs/001-podcas
 ```bash
 python -m venv .venv && . .venv/Scripts/activate   # Windows
 pip install -e .            # core (reads + mock spine + tests)
-pip install -e ".[live]"    # add Google/Spotify SDKs for real API calls
+pip install -e ".[live]"    # add Google SDKs for real YouTube API calls (Apple read needs none)
 pip install -e ".[dev]"     # pytest, ruff, black
 ```
 
@@ -43,7 +43,7 @@ The mock spine runs with no credentials and makes zero external calls.
 
 ```
 src/podcast_ops/
-  ingest/    DATA: YouTube/Spotify gateways (Adapter) + StagingRepository
+  ingest/    DATA: YouTube/Apple Podcasts gateways (Adapter) + StagingRepository
   resolve/   DATA: Matcher (Strategy) + conform -> Episode objects
   objects/   Episode model + EpisodeRepository
   logic/     the one read-only decision rule (pure function)

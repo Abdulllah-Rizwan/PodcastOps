@@ -28,7 +28,7 @@ not string equality. The honest approach is multi-signal: **normalize → block 
 one-to-one above a threshold**. Blocking cuts the O(n·m) comparison space; one-to-one
 assignment prevents fan-out and false merges.
 **Why here**: It's the declared "hard core" of the project — fusing one episode across YouTube
-and Spotify. Faking it (exact title match) would prove nothing.
+and Apple Podcasts. Faking it (exact title match) would prove nothing.
 **Dig in**: `src/podcast_ops/resolve/matcher.py` (normalize, date-blocking, weighted scoring,
 greedy one-to-one), and the boundary tests in `tests/unit/test_matcher.py`.
 
@@ -67,15 +67,32 @@ fixes.
 
 ## 6. Auth models: app-only vs. user-delegated
 
-**Gist**: Two common OAuth shapes. **App-only** (Spotify Client-Credentials, YouTube API key)
-reads public data with a static secret — no user, no redirect. **User-delegated** (OAuth
-Authorization-Code) mints a *token on behalf of a user* who consents in a browser, required for
-actions that touch owned resources. Know which your call needs before you design around it.
-**Why here**: Reads use app-only; the writeback needs a user-delegated token with the
-`youtube.force-ssl` scope, authorized as the test-channel owner. The redirect-URI confusion you
-hit comes straight from this distinction (reads ignore it).
+**Gist**: Auth sits on a spectrum. **No-auth** (Apple's iTunes lookup API) reads public data with
+no credential at all. **App-only** (YouTube API key) reads public data with a static secret — no
+user, no redirect. **User-delegated** (OAuth Authorization-Code) mints a *token on behalf of a
+user* who consents in a browser, required for actions that touch owned resources. Know which your
+call needs before you design around it.
+**Why here**: Our two reads are no-auth (Apple) and app-only (YouTube API key); the writeback
+needs a user-delegated token with the `youtube.force-ssl` scope, authorized as the test-channel
+owner. The redirect-URI confusion you hit comes straight from this distinction (reads ignore it).
 **Dig in**: `src/podcast_ops/access_check.py` (all three probes side by side);
 `src/podcast_ops/commands/auth.py` (the installed-app consent flow that produces the token).
+
+## 7. External dependencies are a risk — isolate them behind an adapter
+
+**Gist**: A dependency you don't own can hard-block you with no warning (Spotify's API refused
+*every* read: "Active premium subscription required for the owner of the app"). Two disciplines
+save you: (1) **confirm access before you build on it** — a cheap probe, not an assumption; and
+(2) **put each external system behind an adapter/port** so that when one must be swapped, the blast
+radius is one module, not the whole codebase. Swapping Spotify → Apple Podcasts touched the gateway
++ a handful of names, while the matcher, decision rule, writeback, and spine were untouched — that
+containment is the adapter pattern paying for itself.
+**Why here**: This is Principle V ("confirm API access before modeling") and Principle VI
+(dependency inversion at boundaries) colliding with reality in a single afternoon. The entity-
+resolution core didn't care *which* audio platform supplied the episodes — only the adapter did.
+**Dig in**: `src/podcast_ops/ingest/apple_gateway.py` (the drop-in replacement) vs. the deleted
+`spotify_gateway.py`; the deviation record in `decisions.md` (2026-10-21); the probe method in
+`src/podcast_ops/access_check.py`.
 
 ---
 

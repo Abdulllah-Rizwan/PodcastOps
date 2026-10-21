@@ -15,27 +15,25 @@ from podcast_ops.objects.repository import EpisodeRepository
 def _config(tmp_path: Path) -> Config:
     return Config(
         youtube_api_key=None,
-        spotify_client_id=None,
-        spotify_client_secret=None,
         youtube_oauth_client_secrets=None,
         youtube_oauth_token=None,
         test_channel_id="UC_test_channel",
         test_video_id="yt_d",
         target_youtube_source=None,
-        target_spotify_show=None,
+        target_apple_show=None,
         run_dir=tmp_path / "run",
     )
 
 
-def test_mock_spine_end_to_end(tmp_path, youtube_records, spotify_records):
+def test_mock_spine_end_to_end(tmp_path, youtube_records, apple_records):
     config = _config(tmp_path)
     # Seed staging directly (ingest transport needs network; mapping already covered).
     staging = StagingRepository(config.staging_dir)
     staging.save("youtube", youtube_records)
-    staging.save("spotify", spotify_records)
+    staging.save("apple", apple_records)
 
     assert run_fuse(config) == 4  # 2 two-sided + 2 one-sided
-    assert run_decide(config) == 1  # only the Spotify-only episode
+    assert run_decide(config) == 1  # only the Apple-only episode
 
     attempts = run_act(config, real=False)  # mock: zero external calls by construction
     assert attempts == 1
@@ -47,12 +45,12 @@ def test_mock_spine_end_to_end(tmp_path, youtube_records, spotify_records):
 
 
 def test_real_writeback_is_idempotent_and_test_channel_only(
-    tmp_path, youtube_records, spotify_records
+    tmp_path, youtube_records, apple_records
 ):
     config = _config(tmp_path)
     staging = StagingRepository(config.staging_dir)
     staging.save("youtube", youtube_records)
-    staging.save("spotify", spotify_records)
+    staging.save("apple", apple_records)
     run_fuse(config)
 
     episodes = EpisodeRepository(config.objects_dir).load()
@@ -88,11 +86,11 @@ def test_real_writeback_is_idempotent_and_test_channel_only(
     assert store["description"].count(MARKER_PREFIX) == 1
 
 
-def test_real_writeback_refuses_non_test_channel(tmp_path, youtube_records, spotify_records):
+def test_real_writeback_refuses_non_test_channel(tmp_path, youtube_records, apple_records):
     config = _config(tmp_path)
     staging = StagingRepository(config.staging_dir)
     staging.save("youtube", youtube_records)
-    staging.save("spotify", spotify_records)
+    staging.save("apple", apple_records)
     run_fuse(config)
     episodes = EpisodeRepository(config.objects_dir).load()
     target = episodes_needing_action(episodes)[0]

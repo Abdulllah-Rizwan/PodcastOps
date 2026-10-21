@@ -1,6 +1,6 @@
 """LOGIC stage — the one read-only decision rule.
 
-Rule `spotify_without_youtube`: an episode is on Spotify but has no YouTube clip yet. Pure
+Rule `apple_without_youtube`: an episode is on Apple Podcasts but has no YouTube clip yet. Pure
 function over Episode objects; it decides and changes nothing (Principle II).
 """
 
@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from podcast_ops.objects.episode import Episode
 
-RULE_ID = "spotify_without_youtube"
+RULE_ID = "apple_without_youtube"
 
 
 class Decision(BaseModel):
@@ -21,11 +21,13 @@ class Decision(BaseModel):
 
 
 def _decide_one(episode: Episode) -> Decision:
-    on_spotify = "spotify" in episode.present_on
+    on_apple = "apple" in episode.present_on
     missing_youtube = "youtube" in episode.missing_from
-    needed = on_spotify and missing_youtube
+    needed = on_apple and missing_youtube
     reason = (
-        "on Spotify, no YouTube clip yet" if needed else "no action: not a Spotify-only episode"
+        "on Apple Podcasts, no YouTube clip yet"
+        if needed
+        else "no action: not an Apple-only episode"
     )
     return Decision(episode_id=episode.episode_id, action_needed=needed, reason=reason)
 

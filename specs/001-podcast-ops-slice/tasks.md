@@ -32,9 +32,9 @@ Single Python project: `src/podcast_ops/`, `tests/` at repository root (per plan
 **Purpose**: Project initialization and basic structure.
 
 - [X] T001 Create project structure: `src/podcast_ops/{ingest,resolve,objects,logic,action,commands}/` (each with `__init__.py`) and `tests/{unit,integration,contract}/` per plan.md
-- [X] T002 Initialize Python project: `pyproject.toml` (Python 3.11+) with deps `google-api-python-client`, `google-auth-oauthlib`, `spotipy`, `httpx`, `pydantic>=2`, `rapidfuzz`, `pytest`; add console entry `podcast-ops = podcast_ops.cli:main`
+- [X] T002 Initialize Python project: `pyproject.toml` (Python 3.11+) with deps `google-api-python-client`, `google-auth-oauthlib`, `httpx` (Apple iTunes read), `pydantic>=2`, `rapidfuzz`, `pytest`; add console entry `podcast-ops = podcast_ops.cli:main`
 - [X] T003 [P] Configure tooling: `ruff` (lint) + `black` (format) + `pytest` config in `pyproject.toml`
-- [X] T004 [P] Create `.gitignore` and `.env.example` (keys: `YOUTUBE_API_KEY`, `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `YOUTUBE_OAUTH_CLIENT_SECRETS`, `TEST_CHANNEL_ID`, `TEST_VIDEO_ID`, `TARGET_YOUTUBE_SOURCE`, `TARGET_SPOTIFY_SHOW`) — secrets MUST stay untracked (Principle VI)
+- [X] T004 [P] Create `.gitignore` and `.env.example` (keys: `YOUTUBE_API_KEY`, `YOUTUBE_OAUTH_CLIENT_SECRETS`, `TEST_CHANNEL_ID`, `TEST_VIDEO_ID`, `TARGET_YOUTUBE_SOURCE`, `TARGET_APPLE_SHOW`; Apple read needs no credentials) — secrets MUST stay untracked (Principle VI)
 
 ---
 
@@ -47,12 +47,12 @@ user stories depend on.
 M0 access gate (T011) MUST pass before any modeling/coding of ingestion proceeds.
 
 - [X] T005 Implement env-based config loader (reads keys from environment/`.env`; never hardcodes secrets) in `src/podcast_ops/config.py`
-- [X] T006 [P] Implement `RawPlatformRecord` model in `src/podcast_ops/ingest/records.py` — fields per data-model.md: `platform` enum(`youtube`,`spotify`), `platform_id` str, `title` str, `description` str|null, `published_at` date, `duration_seconds` int|null, `engagement` object|null, `raw` object, `fetched_at` datetime; immutable once built
-- [X] T007 [P] Implement `Episode` + embedded `PlatformRef` models in `src/podcast_ops/objects/episode.py` — validation (quoted from data-model.md): "At least one of `youtube`/`spotify` MUST be set"; "`present_on` + `missing_from` MUST together equal {youtube, spotify} with no overlap"; "A two-sided `Episode` MUST carry exactly one YouTube ref and one Spotify ref (no fan-out)"
+- [X] T006 [P] Implement `RawPlatformRecord` model in `src/podcast_ops/ingest/records.py` — fields per data-model.md: `platform` enum(`youtube`,`apple`), `platform_id` str, `title` str, `description` str|null, `published_at` date, `duration_seconds` int|null, `engagement` object|null, `raw` object, `fetched_at` datetime; immutable once built
+- [X] T007 [P] Implement `Episode` + embedded `PlatformRef` models in `src/podcast_ops/objects/episode.py` — validation (quoted from data-model.md): "At least one of `youtube`/`apple` MUST be set"; "`present_on` + `missing_from` MUST together equal {youtube, apple} with no overlap"; "A two-sided `Episode` MUST carry exactly one YouTube ref and one Apple ref (no fan-out)"
 - [X] T008 [P] Implement audit/structured logging helper (append `WritebackAttempt`-style records to `run/action/audit.log`) and shared error types in `src/podcast_ops/action/audit_log.py`
 - [X] T009 Implement `StagingRepository` (persist/load raw records under `run/staging/{platform}/*.json`, kept separate from objects) in `src/podcast_ops/ingest/staging.py` (depends on T006)
 - [X] T010 Implement `EpisodeRepository` (persist/load fused objects at `run/objects/episodes.json`) in `src/podcast_ops/objects/repository.py` (depends on T007)
-- [X] T011 **M0 ACCESS GATE** — implement `check-access` probes (YouTube Data API key read; Spotify Client-Credentials token + show read; test-channel OAuth token carrying `youtube.force-ssl`) in `src/podcast_ops/access_check.py`, and a thin argparse dispatcher wiring the `check-access` subcommand in `src/podcast_ops/cli.py`; running it MUST report OK for all three before modeling proceeds (Principle V; checklist in research.md)
+- [X] T011 **M0 ACCESS GATE** — implement `check-access` probes (YouTube Data API key read; Apple Podcasts iTunes lookup read, no auth; test-channel OAuth token carrying `youtube.force-ssl`) in `src/podcast_ops/access_check.py`, and a thin argparse dispatcher wiring the `check-access` subcommand in `src/podcast_ops/cli.py`; running it MUST report OK for all three before modeling proceeds (Principle V; checklist in research.md)
 
 **Checkpoint**: Config, models, repositories, logging ready and M0 access confirmed — user stories can begin.
 
@@ -60,8 +60,8 @@ M0 access gate (T011) MUST pass before any modeling/coding of ingestion proceeds
 
 ## Phase 3: User Story 1 - Fuse episodes across two platforms (Priority: P1) 🎯 MVP
 
-**Goal**: Read public metadata from YouTube + Spotify into staging, then resolve/conform into
-fused `Episode` objects — the entity-resolution proof.
+**Goal**: Read public metadata from YouTube + Apple Podcasts into staging, then resolve/conform
+into fused `Episode` objects — the entity-resolution proof.
 
 **Independent Test**: Run `ingest` then `fuse` against the chosen show; inspect
 `run/objects/episodes.json` — every real-world episode on both platforms maps to exactly one
@@ -71,13 +71,13 @@ missed matches (SC-002).
 ### Tests for User Story 1 ⚠️ (write first, ensure they FAIL)
 
 - [X] T012 [P] [US1] Contract test for YouTube read mapping against a recorded fixture (engagement counts are integers) in `tests/contract/test_youtube_read.py` (per contracts/youtube-read.md)
-- [X] T013 [P] [US1] Contract test for Spotify read mapping against a recorded fixture (`engagement` is `null`) in `tests/contract/test_spotify_read.py` (per contracts/spotify-read.md)
+- [X] T013 [P] [US1] Contract test for Apple Podcasts read mapping against a recorded fixture (`engagement` is `null`) in `tests/contract/test_apple_read.py` (per contracts/apple-read.md)
 - [X] T014 [P] [US1] Unit tests for the matcher in `tests/unit/test_matcher.py`: similar-but-distinct titles NOT merged; same episode with mismatched titles IS matched; one-sided episode produces single object with correct `missing_from`; no fan-out on near-duplicate re-uploads
 
 ### Implementation for User Story 1
 
 - [X] T015 [P] [US1] Implement `YouTubeGateway.list_episodes()` (Adapter over YouTube Data API v3: `playlistItems`/`search` + `videos.list` `snippet,contentDetails,statistics`; reads only; paginate; surface quota errors) in `src/podcast_ops/ingest/youtube_gateway.py` (per contracts/youtube-read.md)
-- [X] T016 [P] [US1] Implement `SpotifyGateway.list_episodes()` (Adapter over Spotify Web API Client-Credentials: `GET /shows/{id}` + `/shows/{id}/episodes`; `duration_ms`→seconds; `engagement=null`; paginate; surface 429) in `src/podcast_ops/ingest/spotify_gateway.py` (per contracts/spotify-read.md)
+- [X] T016 [P] [US1] Implement `AppleGateway.list_episodes()` (Adapter over the public iTunes lookup API: `GET /lookup?id={collectionId}&entity=podcastEpisode`; no auth; `trackTimeMillis`→seconds; `engagement=null`; filter `wrapperType==podcastEpisode`) in `src/podcast_ops/ingest/apple_gateway.py` (per contracts/apple-read.md) — replaced the originally planned Spotify gateway, see decisions.md
 - [X] T017 [US1] Implement `ingest` command: fetch from both gateways → write `RawPlatformRecord`s via `StagingRepository` in `src/podcast_ops/commands/ingest.py`, and register it in `src/podcast_ops/cli.py` (depends on T015, T016, T009)
 - [X] T018 [US1] Implement the `Matcher` Strategy in `src/podcast_ops/resolve/matcher.py`: normalize titles (strip sponsor/prefix tags, episode-number tokens, punctuation) → block by release-date proximity → weighted score (title similarity via `rapidfuzz` + date closeness + duration closeness) → one-to-one match above threshold (no false merge, no missed match)
 - [X] T019 [US1] Implement conform step building `Episode` objects from matched pairs and one-sided records (set `present_on`/`missing_from`/`match_confidence`) in `src/podcast_ops/resolve/conform.py` (depends on T018, T007)
@@ -92,16 +92,16 @@ missed matches (SC-002).
 **Goal**: Run one read-only rule over `Episode` objects producing a decision; it changes nothing.
 
 **Independent Test**: Run `decide` over known objects; it flags exactly the episodes that are on
-Spotify but missing from YouTube and no others, leaving all objects and external state unchanged
-(SC-003).
+Apple Podcasts but missing from YouTube and no others, leaving all objects and external state
+unchanged (SC-003).
 
 ### Tests for User Story 2 ⚠️ (write first, ensure they FAIL)
 
-- [X] T021 [P] [US2] Unit tests for the decision rule in `tests/unit/test_decision.py`: selects only episodes where `"spotify" in present_on AND "youtube" in missing_from`; "done" episodes not selected; rule mutates no `Episode` (read-only)
+- [X] T021 [P] [US2] Unit tests for the decision rule in `tests/unit/test_decision.py`: selects only episodes where `"apple" in present_on AND "youtube" in missing_from`; "done" episodes not selected; rule mutates no `Episode` (read-only)
 
 ### Implementation for User Story 2
 
-- [X] T022 [US2] Implement `Decision` model and the pure rule `spotify_without_youtube` (fields per data-model.md: `episode_id`, `action_needed` bool, `reason`, `rule`; MUST NOT mutate any `Episode` or external state) in `src/podcast_ops/logic/decision.py`
+- [X] T022 [US2] Implement `Decision` model and the pure rule `apple_without_youtube` (fields per data-model.md: `episode_id`, `action_needed` bool, `reason`, `rule`; MUST NOT mutate any `Episode` or external state) in `src/podcast_ops/logic/decision.py`
 - [X] T023 [US2] Implement `decide` command: load episodes → apply rule → print/emit decisions in `src/podcast_ops/commands/decide.py`, register in `src/podcast_ops/cli.py` (depends on T022, T010)
 
 **Checkpoint**: US1 + US2 both work independently; decisions derived cleanly, nothing mutated.
@@ -125,7 +125,7 @@ duplicate); every attempt in `run/action/audit.log` (SC-004, SC-005).
 
 - [X] T025 [US3] Implement `WritebackAttempt` model and the `WritebackPort` interface (`publish(decision, episode) -> WritebackAttempt`) in `src/podcast_ops/action/writeback.py` (fields per data-model.md; `target` MUST be the owned test channel)
 - [X] T026 [US3] Implement `MockWriteback` (logs `"would publish X to Y"`, no external call, `mode=mock`) in `src/podcast_ops/action/writeback.py` (depends on T025)
-- [X] T027 [US3] Implement `YouTubeWriteback` (OAuth `videos.update` appending Spotify show-notes marker; **test-channel-only guard** — refuse any non-test target; **idempotency marker check** → `skipped_idempotent` on retry) in `src/podcast_ops/action/writeback.py` (depends on T025; per contracts/youtube-writeback.md)
+- [X] T027 [US3] Implement `YouTubeWriteback` (OAuth `videos.update` appending Apple Podcasts show-notes marker; **test-channel-only guard** — refuse any non-test target; **idempotency marker check** → `skipped_idempotent` on retry) in `src/podcast_ops/action/writeback.py` (depends on T025; per contracts/youtube-writeback.md)
 - [X] T028 [US3] Implement `act` command (`--mock` default / `--real`) wiring decision → writeback port → audit log for every attempt in `src/podcast_ops/commands/act.py`, register in `src/podcast_ops/cli.py` (depends on T026, T027, T008, T023)
 
 **Checkpoint**: Full data → logic → action spine runs end-to-end in mock, then real against the test channel.
@@ -138,8 +138,8 @@ duplicate); every attempt in `run/action/audit.log` (SC-004, SC-005).
 
 - [X] T029 [US3] Implement `run` command orchestrating the full spine (ingest → fuse → decide → act) with `--mock`/`--real` in `src/podcast_ops/commands/run.py`, register in `src/podcast_ops/cli.py` (depends on T020, T023, T028)
 - [X] T030 [P] Write `README.md` with setup + the quickstart command sequence (M0→M3)
-- [ ] T031 Run `quickstart.md` validation end-to-end (mock, then real against the test channel), confirm Definition of Done (SC-001..SC-006), and update `progress.md` milestone statuses
-  - **Status**: MOCK portion DONE and validated (ingest-seed → fuse → decide → act mock; 16/16 tests pass). REAL-mode portion BLOCKED pending operator inputs: API credentials, the chosen show's IDs, and the throwaway test channel/video (see `.env.example`).
+- [X] T031 Run `quickstart.md` validation end-to-end (mock, then real against the test channel), confirm Definition of Done (SC-001..SC-006), and update `progress.md` milestone statuses
+  - **Status**: DONE 2026-10-21. Live run against Huberman Lab (YouTube `UC2D2CMWXMOVWx7giW1n3LIg` + Apple `1545953110`): M0 gate PASSED (3/3); ingest 541 YouTube + 200 Apple → fuse 542 Episodes (199 two-sided matched); rule selected 1 Apple-only episode; mock writeback logged, then **real** `videos.update` to test video `CfRIjrzeGrU` succeeded; retry returned `skipped_idempotent` (no duplicate); all attempts in `run/action/audit.log`. Definition of Done met.
 
 > **Live-pending note**: T011 (M0 access gate), the live transport in T017 (`ingest`), and the
 > real writeback in T028/T029 are implemented in code and unit/integration-tested with injected
@@ -179,12 +179,12 @@ duplicate); every attempt in `run/action/audit.log` (SC-004, SC-005).
 ```bash
 # Tests first (parallel):
 Task: "Contract test YouTube read in tests/contract/test_youtube_read.py"
-Task: "Contract test Spotify read in tests/contract/test_spotify_read.py"
+Task: "Contract test Apple Podcasts read in tests/contract/test_apple_read.py"
 Task: "Matcher unit tests in tests/unit/test_matcher.py"
 
 # Then gateways (parallel):
 Task: "YouTubeGateway in src/podcast_ops/ingest/youtube_gateway.py"
-Task: "SpotifyGateway in src/podcast_ops/ingest/spotify_gateway.py"
+Task: "AppleGateway in src/podcast_ops/ingest/apple_gateway.py"
 ```
 
 ---

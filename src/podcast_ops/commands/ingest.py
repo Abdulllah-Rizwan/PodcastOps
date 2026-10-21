@@ -3,27 +3,27 @@
 from __future__ import annotations
 
 from podcast_ops.config import Config
-from podcast_ops.ingest.spotify_gateway import SpotifyGateway
+from podcast_ops.ingest.apple_gateway import AppleGateway
 from podcast_ops.ingest.staging import StagingRepository
 from podcast_ops.ingest.youtube_gateway import YouTubeGateway
 
 
 def run_ingest(config: Config) -> dict[str, int]:
-    """Fetch public metadata from YouTube + Spotify and persist to staging."""
-    if not config.target_youtube_source or not config.target_spotify_show:
-        raise ValueError("TARGET_YOUTUBE_SOURCE and TARGET_SPOTIFY_SHOW must be set")
+    """Fetch public metadata from YouTube + Apple Podcasts and persist to staging."""
+    if not config.target_youtube_source or not config.target_apple_show:
+        raise ValueError("TARGET_YOUTUBE_SOURCE and TARGET_APPLE_SHOW must be set")
 
     staging = StagingRepository(config.staging_dir)
 
     yt_gateway = YouTubeGateway(config.youtube_api_key or "")
-    sp_gateway = SpotifyGateway(config.spotify_client_id or "", config.spotify_client_secret or "")
+    ap_gateway = AppleGateway()
 
     yt_records = yt_gateway.list_episodes(config.target_youtube_source)
-    sp_records = sp_gateway.list_episodes(config.target_spotify_show)
+    ap_records = ap_gateway.list_episodes(config.target_apple_show)
 
     staging.save("youtube", yt_records)
-    staging.save("spotify", sp_records)
+    staging.save("apple", ap_records)
 
-    counts = {"youtube": len(yt_records), "spotify": len(sp_records)}
-    print(f"Ingested -> staging: youtube={counts['youtube']} spotify={counts['spotify']}")
+    counts = {"youtube": len(yt_records), "apple": len(ap_records)}
+    print(f"Ingested -> staging: youtube={counts['youtube']} apple={counts['apple']}")
     return counts

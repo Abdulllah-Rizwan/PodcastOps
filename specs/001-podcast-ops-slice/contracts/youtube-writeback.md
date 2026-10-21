@@ -18,7 +18,7 @@ Two implementations, selected by CLI flag (`--mock` default, `--real`):
 
 ### YouTubeWriteback (real, enabled only after mock-mode spine passes)
 - Call: `videos.update` with `part=snippet`, updating `snippet.description` of an owned test
-  video to append a Spotify-link show-notes marker.
+  video to append an Apple-Podcasts-link show-notes marker.
 - `mode = real`, `target =` test video id on the test channel.
 
 ## Contract rules (safety — Principle IV)

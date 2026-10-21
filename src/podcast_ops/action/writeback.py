@@ -20,7 +20,7 @@ from podcast_ops.objects.episode import Episode
 logger = logging.getLogger("podcast_ops.action")
 
 # Marker appended to a test video's description so retries are idempotent.
-MARKER_PREFIX = "[podcast-ops] linked Spotify episode:"
+MARKER_PREFIX = "[podcast-ops] linked Apple Podcasts episode:"
 
 
 class WritebackAttempt(BaseModel):
@@ -55,10 +55,11 @@ def _new_attempt(
 
 
 def _intended_change(episode: Episode) -> str:
-    sp = episode.spotify
-    sp_url = sp.url if sp else None
+    ap = episode.apple
+    ap_url = ap.url if ap else None
     return (
-        f"append show-notes marker for Spotify episode {sp.platform_id if sp else '?'} ({sp_url})"
+        f"append show-notes marker for Apple Podcasts episode "
+        f"{ap.platform_id if ap else '?'} ({ap_url})"
     )
 
 
@@ -118,7 +119,7 @@ class YouTubeWriteback:
                     f"only test channel {self._channel} is allowed"
                 )
 
-            marker = f"{MARKER_PREFIX} {episode.spotify.platform_id if episode.spotify else ''}"
+            marker = f"{MARKER_PREFIX} {episode.apple.platform_id if episode.apple else ''}"
             description = current.get("description", "") or ""
 
             # Idempotency: do not duplicate on retry.

@@ -1,9 +1,10 @@
 """Entity resolution — the hard core of the project (Principle III).
 
-Matches the same real-world episode across YouTube and Spotify despite mismatched IDs, titles
-and schemas. Uses a multi-signal, inspectable strategy: normalize titles, block by release-date
-proximity, score by weighted (title similarity + date closeness + duration closeness), then take
-one-to-one matches above a threshold. No exact-equality shortcut; no fan-out; no false merge.
+Matches the same real-world episode across YouTube and Apple Podcasts despite mismatched IDs,
+titles and schemas. Uses a multi-signal, inspectable strategy: normalize titles, block by
+release-date proximity, score by weighted (title similarity + date closeness + duration
+closeness), then take one-to-one matches above a threshold. No exact-equality shortcut; no
+fan-out; no false merge.
 """
 
 from __future__ import annotations
@@ -44,7 +45,7 @@ class MatchConfig:
 @dataclass(frozen=True)
 class Match:
     youtube_index: int
-    spotify_index: int
+    apple_index: int
     score: float
 
 
@@ -67,44 +68,44 @@ def _title_score(a: RawPlatformRecord, b: RawPlatformRecord) -> float:
 
 
 class Matcher:
-    """Strategy that pairs YouTube and Spotify records into episode matches."""
+    """Strategy that pairs YouTube and Apple Podcasts records into episode matches."""
 
     def __init__(self, config: MatchConfig | None = None) -> None:
         self.config = config or MatchConfig()
 
-    def score(self, yt: RawPlatformRecord, sp: RawPlatformRecord) -> float:
+    def score(self, yt: RawPlatformRecord, ap: RawPlatformRecord) -> float:
         c = self.config
         return (
-            c.title_weight * _title_score(yt, sp)
-            + c.date_weight * _date_score(yt, sp)
-            + c.duration_weight * _duration_score(yt, sp)
+            c.title_weight * _title_score(yt, ap)
+            + c.date_weight * _date_score(yt, ap)
+            + c.duration_weight * _duration_score(yt, ap)
         )
 
     def match(
         self,
         youtube: list[RawPlatformRecord],
-        spotify: list[RawPlatformRecord],
+        apple: list[RawPlatformRecord],
     ) -> list[Match]:
         """Return one-to-one matches above threshold, greedily by descending score."""
         c = self.config
         candidates: list[Match] = []
         for i, yt in enumerate(youtube):
-            for j, sp in enumerate(spotify):
+            for j, ap in enumerate(apple):
                 # Blocking: skip pairs far apart in release date.
-                if abs((yt.published_at - sp.published_at).days) > c.date_block_days:
+                if abs((yt.published_at - ap.published_at).days) > c.date_block_days:
                     continue
-                s = self.score(yt, sp)
+                s = self.score(yt, ap)
                 if s >= c.threshold:
                     candidates.append(Match(i, j, s))
 
         candidates.sort(key=lambda m: m.score, reverse=True)
         used_yt: set[int] = set()
-        used_sp: set[int] = set()
+        used_ap: set[int] = set()
         result: list[Match] = []
         for m in candidates:
-            if m.youtube_index in used_yt or m.spotify_index in used_sp:
+            if m.youtube_index in used_yt or m.apple_index in used_ap:
                 continue  # enforce one-to-one — no fan-out, no false merge
             used_yt.add(m.youtube_index)
-            used_sp.add(m.spotify_index)
+            used_ap.add(m.apple_index)
             result.append(m)
         return result

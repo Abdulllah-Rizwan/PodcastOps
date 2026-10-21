@@ -15,7 +15,7 @@ def run_decide(config: Config) -> int:
     decisions = decide(episodes)
     selected = [d for d in decisions if d.action_needed]
 
-    print(f"Decision rule: spotify_without_youtube - {len(selected)}/{len(decisions)} need action")
+    print(f"Decision rule: apple_without_youtube - {len(selected)}/{len(decisions)} need action")
     for d in selected:
         print(f"  - {d.episode_id}: {d.reason}")
     return len(selected)

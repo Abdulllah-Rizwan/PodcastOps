@@ -33,8 +33,9 @@
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`
 - All items pass on first validation iteration. The spec stays platform-named (YouTube,
-  Spotify) only because those two platforms are a fixed, hard-boundary scope decision from the
-  constitution, not an implementation choice — they are treated as given business constraints.
+  Apple Podcasts) only because those two platforms are a fixed, hard-boundary scope decision from
+  the constitution, not an implementation choice — they are treated as given business constraints.
+  (The second platform was Spotify until 2026-10-21; see decisions.md.)
 - No [NEEDS CLARIFICATION] markers were needed: the constitution and CLAUDE.md supply firm
   scope, and the one open choice (which decision-rule / writeback pair) is captured as an
   assumption to be finalized in planning without widening scope.

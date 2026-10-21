@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Input**: User description: "The validation slice defined in CLAUDE.md and the project constitution — prove one end-to-end spine of the data → logic → action pattern: read one real public show from YouTube + Spotify, fuse its episodes into `Episode` objects (entity resolution), apply exactly one decision rule, and execute exactly one safe, logged writeback to our own throwaway test channel."
+**Input**: User description: "The validation slice defined in CLAUDE.md and the project constitution — prove one end-to-end spine of the data → logic → action pattern: read one real public show from YouTube + Apple Podcasts, fuse its episodes into `Episode` objects (entity resolution), apply exactly one decision rule, and execute exactly one safe, logged writeback to our own throwaway test channel." *(Originally specified Spotify as the second platform; changed to Apple Podcasts on 2026-10-21 — see decisions.md.)*
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -17,9 +17,9 @@ and is independently testable.
 ### User Story 1 - Fuse one show's episodes across two platforms (Priority: P1)
 
 The operator points the system at one real, public podcast that is published on both
-YouTube and Spotify. The system pulls public metadata from each platform into a staging
+YouTube and Apple Podcasts. The system pulls public metadata from each platform into a staging
 area, resolves and conforms it, and produces a set of clean, fused `Episode` objects — one
-object per real-world episode, each carrying both its YouTube identity and its Spotify
+object per real-world episode, each carrying both its YouTube identity and its Apple Podcasts
 identity. This is the entity-resolution proof.
 
 **Why this priority**: Entity resolution is the hard core of the project. Fusing the same
@@ -29,17 +29,17 @@ already delivers a demonstrable result: a correctly merged object set.
 
 **Independent Test**: Run the ingest + fuse step against the chosen show and inspect the
 resulting `Episode` objects. It passes if each fused object correctly unites the matching
-YouTube and Spotify entries for the same episode, with no false merges and no missed
+YouTube and Apple Podcasts entries for the same episode, with no false merges and no missed
 matches across the show's episodes.
 
 **Acceptance Scenarios**:
 
-1. **Given** a real public show present on both YouTube and Spotify, **When** the operator
+1. **Given** a real public show present on both YouTube and Apple Podcasts, **When** the operator
    runs ingestion, **Then** raw metadata from each platform first lands in a staging area,
    distinct from any `Episode` object.
 2. **Given** staged raw metadata from both platforms, **When** resolution and conforming
    run, **Then** each real-world episode becomes exactly one `Episode` object carrying both
-   its YouTube and Spotify identities.
+   its YouTube and Apple Podcasts identities.
 3. **Given** two episodes with similar but non-identical titles, **When** resolution runs,
    **Then** they are not falsely merged into one object.
 4. **Given** an episode present on one platform but not (yet) the other, **When** resolution
@@ -50,7 +50,7 @@ matches across the show's episodes.
 ### User Story 2 - Produce one decision from the fused objects (Priority: P2)
 
 With `Episode` objects available, the operator runs one read-only rule that inspects each
-object and produces a decision — for example, "this episode exists on Spotify but has no
+object and produces a decision — for example, "this episode exists on Apple Podcasts but has no
 corresponding YouTube clip yet." The rule decides; it changes nothing.
 
 **Why this priority**: This is the "logic" stage of the spine. It is small but proves that
@@ -104,9 +104,9 @@ a failed attempt retryable.
 
 ### Edge Cases
 
-- **Title/ID mismatch**: An episode's YouTube title differs from its Spotify title (extra
+- **Title/ID mismatch**: An episode's YouTube title differs from its Apple Podcasts title (extra
   tags, episode numbering, sponsor prefixes). Resolution must still match them to one object.
-- **One-sided presence**: An episode exists on Spotify but not YouTube (or vice versa). It
+- **One-sided presence**: An episode exists on Apple Podcasts but not YouTube (or vice versa). It
   becomes one `Episode` object that records the missing side — this is exactly the condition
   the decision rule looks for.
 - **Duplicate/near-duplicate entries** on a single platform (e.g., a re-upload). Resolution
@@ -126,13 +126,13 @@ a failed attempt retryable.
 **Data stage (read + stage + resolve + conform → object)**
 
 - **FR-001**: System MUST read public metadata for ONE real, public show from exactly two
-  platforms — YouTube and Spotify — including YouTube public engagement counts.
+  platforms — YouTube and Apple Podcasts — including YouTube public engagement counts.
 - **FR-002**: System MUST land raw platform data in a staging area first, kept distinct from
   any `Episode` object; raw data MUST NOT be written directly into an object.
 - **FR-003**: System MUST resolve and conform staged data before producing objects, so an
   `Episode` object is the clean, fused result rather than a raw inlet.
-- **FR-004**: System MUST match the same real-world episode across YouTube and Spotify into a
-  single `Episode` object (entity resolution), uniting both platform identities.
+- **FR-004**: System MUST match the same real-world episode across YouTube and Apple Podcasts into
+  a single `Episode` object (entity resolution), uniting both platform identities.
 - **FR-005**: System MUST avoid false merges (distinct episodes merged into one) and missed
   matches (the same episode split across two objects) for the chosen show.
 - **FR-006**: System MUST record, on each `Episode` object, which platforms the episode is
@@ -143,7 +143,7 @@ a failed attempt retryable.
 **Logic stage (decide)**
 
 - **FR-008**: System MUST provide exactly one decision rule/function that reads `Episode`
-  objects and produces a decision (e.g., "exists on Spotify but has no YouTube clip yet").
+  objects and produces a decision (e.g., "exists on Apple Podcasts but has no YouTube clip yet").
 - **FR-009**: The decision rule MUST be read-only: it MUST NOT modify any `Episode` object or
   any external platform state.
 - **FR-010**: The decision rule MUST use plain, explicit rules only — no machine learning and
@@ -174,11 +174,11 @@ a failed attempt retryable.
 ### Key Entities *(include if feature involves data)*
 
 - **Raw Platform Record (staging)**: An untransformed metadata record as pulled from a single
-  platform (YouTube or Spotify). Lives only in the staging area. Carries the platform's native
-  IDs, titles, and available public fields. Never treated as a finished object.
+  platform (YouTube or Apple Podcasts). Lives only in the staging area. Carries the platform's
+  native IDs, titles, and available public fields. Never treated as a finished object.
 - **Episode (object)**: The clean, fused result representing one real-world episode. Unites the
-  matching YouTube and Spotify identities, records which platforms it appears on and which it is
-  missing from, and holds the conformed public metadata (and YouTube public engagement counts).
+  matching YouTube and Apple Podcasts identities, records which platforms it appears on and which
+  it is missing from, and holds the conformed public metadata (and YouTube public engagement counts).
   Type ≈ a table; instance ≈ a row.
 - **Decision**: The read-only output of the single rule for a given `Episode` — whether the one
   action applies (e.g., "needs a YouTube clip") — carrying enough context to drive the action.
@@ -191,8 +191,8 @@ a failed attempt retryable.
 ### Measurable Outcomes
 
 - **SC-001**: In one end-to-end run, the system pulls the chosen show from both YouTube and
-  Spotify, fuses its episodes, applies the one rule, and performs one safe, logged writeback to
-  the test channel — the entire spine completes.
+  Apple Podcasts, fuses its episodes, applies the one rule, and performs one safe, logged writeback
+  to the test channel — the entire spine completes.
 - **SC-002**: Entity resolution is correct for 100% of the chosen show's episodes: every
   real-world episode present on both platforms maps to exactly one `Episode` object, with zero
   false merges and zero missed matches.
@@ -209,7 +209,7 @@ a failed attempt retryable.
 ## Assumptions
 
 - The operator has selected one real, public show that is published on both YouTube and
-  Spotify, and is content to treat its public metadata as the only data source.
+  Apple Podcasts, and is content to treat its public metadata as the only data source.
 - Reading public metadata (plus YouTube public engagement counts) requires no ownership of the
   chosen show; only the writeback requires ownership, and that targets our own throwaway test
   channel.

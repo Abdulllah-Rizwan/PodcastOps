@@ -25,10 +25,10 @@ def _youtube_ref(r: RawPlatformRecord) -> PlatformRef:
     )
 
 
-def _spotify_ref(r: RawPlatformRecord) -> PlatformRef:
-    url = (r.raw or {}).get("_url") or (r.raw.get("external_urls", {}) or {}).get("spotify")
+def _apple_ref(r: RawPlatformRecord) -> PlatformRef:
+    url = (r.raw or {}).get("_url") or (r.raw or {}).get("trackViewUrl")
     return PlatformRef(
-        platform="spotify",
+        platform="apple",
         platform_id=r.platform_id,
         url=url,
         title=r.title,
@@ -49,34 +49,34 @@ def _missing(present: set[Platform]) -> list[Platform]:
 
 def conform(
     youtube: list[RawPlatformRecord],
-    spotify: list[RawPlatformRecord],
+    apple: list[RawPlatformRecord],
     matches: list[Match] | None = None,
     matcher: Matcher | None = None,
 ) -> list[Episode]:
     """Fuse staged records into Episode objects."""
     if matches is None:
         matcher = matcher or Matcher()
-        matches = matcher.match(youtube, spotify)
+        matches = matcher.match(youtube, apple)
 
     episodes: list[Episode] = []
     matched_yt: set[int] = set()
-    matched_sp: set[int] = set()
+    matched_ap: set[int] = set()
 
     # Two-sided episodes.
     for m in matches:
         yt = youtube[m.youtube_index]
-        sp = spotify[m.spotify_index]
+        ap = apple[m.apple_index]
         matched_yt.add(m.youtube_index)
-        matched_sp.add(m.spotify_index)
+        matched_ap.add(m.apple_index)
         episodes.append(
             Episode(
-                episode_id=_episode_id(yt, sp),
+                episode_id=_episode_id(yt, ap),
                 title=yt.title,
                 published_at=yt.published_at,
-                duration_seconds=yt.duration_seconds or sp.duration_seconds,
+                duration_seconds=yt.duration_seconds or ap.duration_seconds,
                 youtube=_youtube_ref(yt),
-                spotify=_spotify_ref(sp),
-                present_on=["youtube", "spotify"],
+                apple=_apple_ref(ap),
+                present_on=["youtube", "apple"],
                 missing_from=[],
                 match_confidence=round(m.score, 4),
             )
@@ -93,27 +93,27 @@ def conform(
                 published_at=yt.published_at,
                 duration_seconds=yt.duration_seconds,
                 youtube=_youtube_ref(yt),
-                spotify=None,
+                apple=None,
                 present_on=["youtube"],
                 missing_from=_missing({"youtube"}),
                 match_confidence=None,
             )
         )
 
-    # One-sided: Spotify only.
-    for j, sp in enumerate(spotify):
-        if j in matched_sp:
+    # One-sided: Apple Podcasts only.
+    for j, ap in enumerate(apple):
+        if j in matched_ap:
             continue
         episodes.append(
             Episode(
-                episode_id=_episode_id(sp),
-                title=sp.title,
-                published_at=sp.published_at,
-                duration_seconds=sp.duration_seconds,
+                episode_id=_episode_id(ap),
+                title=ap.title,
+                published_at=ap.published_at,
+                duration_seconds=ap.duration_seconds,
                 youtube=None,
-                spotify=_spotify_ref(sp),
-                present_on=["spotify"],
-                missing_from=_missing({"spotify"}),
+                apple=_apple_ref(ap),
+                present_on=["apple"],
+                missing_from=_missing({"apple"}),
                 match_confidence=None,
             )
         )

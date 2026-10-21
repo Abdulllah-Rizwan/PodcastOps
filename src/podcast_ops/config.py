@@ -36,8 +36,6 @@ class Config:
 
     # Reads
     youtube_api_key: str | None
-    spotify_client_id: str | None
-    spotify_client_secret: str | None
 
     # Write (real mode)
     youtube_oauth_client_secrets: str | None
@@ -47,7 +45,7 @@ class Config:
 
     # The one chosen show
     target_youtube_source: str | None
-    target_spotify_show: str | None
+    target_apple_show: str | None
 
     # Output
     run_dir: Path
@@ -58,14 +56,12 @@ class Config:
             load_dotenv()
         return cls(
             youtube_api_key=os.environ.get("YOUTUBE_API_KEY") or None,
-            spotify_client_id=os.environ.get("SPOTIFY_CLIENT_ID") or None,
-            spotify_client_secret=os.environ.get("SPOTIFY_CLIENT_SECRET") or None,
             youtube_oauth_client_secrets=os.environ.get("YOUTUBE_OAUTH_CLIENT_SECRETS") or None,
             youtube_oauth_token=os.environ.get("YOUTUBE_OAUTH_TOKEN") or None,
             test_channel_id=os.environ.get("TEST_CHANNEL_ID") or None,
             test_video_id=os.environ.get("TEST_VIDEO_ID") or None,
             target_youtube_source=os.environ.get("TARGET_YOUTUBE_SOURCE") or None,
-            target_spotify_show=os.environ.get("TARGET_SPOTIFY_SHOW") or None,
+            target_apple_show=os.environ.get("TARGET_APPLE_SHOW") or None,
             run_dir=Path(os.environ.get("RUN_DIR", "./run")),
         )
 

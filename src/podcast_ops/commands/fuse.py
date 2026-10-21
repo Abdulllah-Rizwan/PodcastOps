@@ -13,9 +13,9 @@ def run_fuse(config: Config) -> int:
     """Build fused Episode objects from staging and persist them. Returns episode count."""
     staging = StagingRepository(config.staging_dir)
     youtube = staging.load("youtube")
-    spotify = staging.load("spotify")
+    apple = staging.load("apple")
 
-    episodes = conform(youtube, spotify, matcher=Matcher())
+    episodes = conform(youtube, apple, matcher=Matcher())
 
     repo = EpisodeRepository(config.objects_dir)
     repo.save(episodes)

@@ -35,29 +35,28 @@ def check_youtube_read(config: Config) -> ProbeResult:  # pragma: no cover - liv
         return ProbeResult(name, False, f"error: {exc}")
 
 
-def check_spotify_read(config: Config) -> ProbeResult:  # pragma: no cover - live
-    name = "Spotify read (client credentials)"
-    if not (config.spotify_client_id and config.spotify_client_secret):
-        return ProbeResult(name, False, "missing SPOTIFY_CLIENT_ID / SPOTIFY_CLIENT_SECRET")
-    if not config.target_spotify_show:
-        return ProbeResult(name, False, "missing TARGET_SPOTIFY_SHOW")
+def check_apple_read(config: Config) -> ProbeResult:  # pragma: no cover - live
+    name = "Apple Podcasts read (public, no auth)"
+    if not config.target_apple_show:
+        return ProbeResult(name, False, "missing TARGET_APPLE_SHOW")
     try:
+        from urllib.parse import urlencode
+
         import httpx
 
-        tok = httpx.post(
-            "https://accounts.spotify.com/api/token",
-            data={"grant_type": "client_credentials"},
-            auth=(config.spotify_client_id, config.spotify_client_secret),
-            timeout=30,
+        params = urlencode(
+            {
+                "id": config.target_apple_show,
+                "entity": "podcastEpisode",
+                "limit": 1,
+                "country": "US",
+            }
         )
-        tok.raise_for_status()
-        token = tok.json()["access_token"]
-        resp = httpx.get(
-            f"https://api.spotify.com/v1/shows/{config.target_spotify_show}",
-            headers={"Authorization": f"Bearer {token}"},
-            timeout=30,
-        )
+        resp = httpx.get(f"https://itunes.apple.com/lookup?{params}", timeout=30)
         resp.raise_for_status()
+        results = resp.json().get("results", [])
+        if not results:
+            return ProbeResult(name, False, f"no podcast found for id {config.target_apple_show}")
         return ProbeResult(name, True, "ok")
     except Exception as exc:
         return ProbeResult(name, False, f"error: {exc}")
@@ -82,4 +81,4 @@ def check_youtube_write(config: Config) -> ProbeResult:  # pragma: no cover - li
 
 
 def run_all(config: Config) -> list[ProbeResult]:
-    return [check_youtube_read(config), check_spotify_read(config), check_youtube_write(config)]
+    return [check_youtube_read(config), check_apple_read(config), check_youtube_write(config)]

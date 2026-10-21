@@ -44,12 +44,14 @@ Deferred, acknowledged, **do not build in this slice**: the learning **loop**
 These are later milestones.
 
 ## Scope of the validation slice (hard boundary)
-- **Read:** ONE real, public show, from **two** platforms — **YouTube + Spotify** —
+- **Read:** ONE real, public show, from **two** platforms — **YouTube + Apple Podcasts** —
   using public metadata (+ YouTube public engagement counts). No ownership needed to read.
+  (Apple replaced Spotify on 2026-10-21 — Spotify's API required a Premium app-owner account;
+  see `decisions.md`.)
 - **Fuse:** match the same episode across both platforms into one `Episode` object.
   ← this is the entity-resolution proof.
 - **Logic:** exactly **one** rule/function that produces a decision
-  (e.g. "episode exists on Spotify but has no YouTube clip yet").
+  (e.g. "episode exists on Apple Podcasts but has no YouTube clip yet").
 - **Action:** exactly **one** writeback, to **our own throwaway test channel**
   (e.g. post a draft clip / update show notes / schedule a post). Never to anyone
   else's channel.
@@ -80,6 +82,6 @@ accessible — do not design around it.
 - *(later)* **M4** — close one loop.  **M5** — widen.
 
 ## Definition of done (slice)
-One run: pulls a real show from YouTube + Spotify, fuses its episodes correctly, applies
+One run: pulls a real show from YouTube + Apple Podcasts, fuses its episodes correctly, applies
 the one rule, and executes one safe, logged writeback to the test channel. If that runs
 end-to-end, the slice is done. Stop there.

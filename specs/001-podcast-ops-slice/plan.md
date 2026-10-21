@@ -7,7 +7,7 @@
 ## Summary
 
 Prove one end-to-end spine of the **data → logic → action** pattern: read public metadata
-for one real show from YouTube + Spotify into a staging area, resolve/conform it into fused
+for one real show from YouTube + Apple Podcasts into a staging area, resolve/conform it into fused
 `Episode` objects (the entity-resolution proof), run exactly one read-only decision rule, and
 execute exactly one safe, logged, mock-first writeback to our own throwaway YouTube test
 channel. Technical approach: a small single Python project with clean seams between the four
@@ -23,7 +23,7 @@ any object is modeled.
 **Primary Dependencies**:
 - `google-api-python-client` + `google-auth-oauthlib` — YouTube Data API v3 (public reads via
   API key; owned-channel writes via OAuth 2.0)
-- `spotipy` (or `httpx` directly) — Spotify Web API (Client Credentials flow, public reads)
+- `httpx` — Apple Podcasts public iTunes lookup API (no auth; replaced Spotify, see decisions.md)
 - `pydantic` v2 — typed object modeling / validation for staging records and `Episode` objects
 - `rapidfuzz` — string similarity for entity-resolution matching
 - `pytest` — testing
@@ -39,7 +39,8 @@ the mock-mode spine, contract tests for the gateway response shapes (recorded fi
 **Project Type**: Single project (CLI orchestrating the four-stage spine).
 
 **Performance Goals**: N/A — one show, run once. Stay within free API quotas (YouTube Data API
-default 10,000 units/day; Spotify standard rate limits). Correctness, not throughput, is the goal.
+default 10,000 units/day; Apple iTunes lookup is unauthenticated, used sparingly). Correctness,
+not throughput, is the goal.
 
 **Constraints**:
 - Reads use public metadata only (+ YouTube public engagement counts); no owner-only data.
@@ -52,7 +53,7 @@ default 10,000 units/day; Spotify standard rate limits). Correctness, not throug
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Gates derived from `.specify/memory/constitution.md` (v1.0.0):
+Gates derived from `.specify/memory/constitution.md` (v1.1.0):
 
 | # | Principle | Gate | Initial |
 |---|-----------|------|---------|
@@ -77,7 +78,7 @@ specs/001-podcast-ops-slice/
 ├── quickstart.md        # Phase 1 output
 ├── contracts/           # Phase 1 output
 │   ├── youtube-read.md
-│   ├── spotify-read.md
+│   ├── apple-read.md
 │   └── youtube-writeback.md
 ├── spec.md              # Feature spec (/speckit-specify)
 ├── checklists/
@@ -92,7 +93,7 @@ src/podcast_ops/
 ├── config.py                 # env-based config; no secrets in source
 ├── ingest/                   # DATA (read + stage) — Adapter/Gateway + staging Repository
 │   ├── youtube_gateway.py    #   reads YouTube public metadata + engagement counts
-│   ├── spotify_gateway.py    #   reads Spotify public show/episode metadata
+│   ├── apple_gateway.py      #   reads Apple Podcasts public episode metadata (iTunes lookup)
 │   └── staging.py            #   StagingRepository: raw records land here first
 ├── resolve/                  # DATA (resolve + conform) — entity resolution → objects
 │   ├── matcher.py            #   Strategy: match episodes across platforms (the hard core)

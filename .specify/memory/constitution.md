@@ -1,6 +1,18 @@
 <!--
 SYNC IMPACT REPORT (scratch — remove before committing the amended constitution)
 =================================================================================
+Amendment 2026-10-21: 1.0.0 → 1.1.0 (MINOR)
+Rationale: The second read platform is changed from Spotify to Apple Podcasts.
+The Spotify Web API refused all catalog reads for the operator's app
+("Active premium subscription required for the owner of the app"), a hard
+external blocker. Apple Podcasts' public iTunes lookup API serves the same full
+episodes with no auth, no market, and no Premium gate, so the two-platform
+entity-resolution proof is preserved. The pattern, the "exactly two platforms"
+rule, and every principle are unchanged; only the named platform differs — hence
+MINOR, not MAJOR. See decisions.md (2026-10-21). Sections touched: Principle III,
+Principle V, Scope Boundaries, Development Workflow (DoD).
+
+--- original first-ratification report below ---
 Version change: (unratified template) → 1.0.0
 Rationale: First ratification. The prior file contained only unfilled template
 placeholders, so this is the initial adoption of a complete constitution — a
@@ -74,7 +86,7 @@ Correctly matching the same real-world thing (an episode, a guest) across platfo
 use mismatched IDs, titles, and schemas is the central problem this project proves. It
 MUST NOT be papered over, stubbed into triviality, or assumed away.
 
-- Fusing one real episode across YouTube and Spotify into a single `Episode` object is
+- Fusing one real episode across YouTube and Apple Podcasts into a single `Episode` object is
   **the** entity-resolution proof and MUST be implemented honestly.
 - Matching logic MUST be explicit, inspectable, and defensible against realistic
   mismatches — not a naive exact-string equality that happens to work on one example.
@@ -104,8 +116,8 @@ Before any object is modeled, the two platforms MUST be verified to actually per
 one planned read and the one planned write — quotas, auth, and write scopes included.
 
 - Reads are limited to public metadata of ONE real public show from exactly TWO platforms,
-  **YouTube + Spotify** (plus YouTube public engagement counts). No ownership is needed to
-  read, and owner-only data (listen counts, retention curves for a show we do not own) is
+  **YouTube + Apple Podcasts** (plus YouTube public engagement counts). No ownership is needed
+  to read, and owner-only data (listen counts, retention curves for a show we do not own) is
   inaccessible and MUST NOT be designed around.
 - A writeback a platform forbids MUST NOT be designed. Access is confirmed first (M0),
   then modeling proceeds.
@@ -142,12 +154,12 @@ deferred milestones without a rewrite.
 
 These boundaries are non-negotiable for the validation slice:
 
-- **Read:** ONE real, public show, from exactly TWO platforms (YouTube + Spotify), using
-  public metadata plus YouTube public engagement counts.
+- **Read:** ONE real, public show, from exactly TWO platforms (YouTube + Apple Podcasts),
+  using public metadata plus YouTube public engagement counts.
 - **Fuse:** match the same episode across both platforms into one `Episode` object
   (the entity-resolution proof).
 - **Logic:** exactly ONE rule/function that produces a decision (e.g., "episode exists on
-  Spotify but has no YouTube clip yet").
+  Apple Podcasts but has no YouTube clip yet").
 - **Action:** exactly ONE writeback, to our own throwaway test channel, mock-logged first
   then real, safe and logged.
 - **Explicitly out of scope:** the learning **loop** (performance feeding back into logic);
@@ -179,8 +191,8 @@ Quality gates applied to every change:
 - Code quality: Principle VI is satisfied — tests for resolution and the decision rule pass,
   seams remain mockable, no secrets committed.
 
-**Definition of Done (slice):** One run pulls a real show from YouTube + Spotify, fuses its
-episodes correctly, applies the one rule, and executes one safe, logged writeback to the
+**Definition of Done (slice):** One run pulls a real show from YouTube + Apple Podcasts, fuses
+its episodes correctly, applies the one rule, and executes one safe, logged writeback to the
 test channel. If that runs end-to-end, the slice is done. Stop there.
 
 ## Governance
@@ -200,4 +212,4 @@ constitution-in-brief and the runtime guidance file; where this document and det
   stopped and flagged. Complexity beyond the slice MUST be justified against the principles
   or deferred.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-21 | **Last Amended**: 2026-10-21
+**Version**: 1.1.0 | **Ratified**: 2026-10-21 | **Last Amended**: 2026-10-21

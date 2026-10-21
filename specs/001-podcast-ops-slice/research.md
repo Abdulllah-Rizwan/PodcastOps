@@ -9,8 +9,8 @@ platforms before `data-model.md` is acted on in code.
 
 ## Decision 1 — Language & stack
 
-- **Decision**: Python 3.11+, with `google-api-python-client` (YouTube), `spotipy`/`httpx`
-  (Spotify), `pydantic` v2 (modeling), `rapidfuzz` (matching), `pytest` (tests).
+- **Decision**: Python 3.11+, with `google-api-python-client` (YouTube), `httpx`
+  (Apple Podcasts iTunes API), `pydantic` v2 (modeling), `rapidfuzz` (matching), `pytest` (tests).
 - **Rationale**: Both platforms have mature, well-documented Python clients; `pydantic` gives
   clean typed objects for the staging→object boundary; `rapidfuzz` provides fast, inspectable
   string similarity for honest entity resolution. Lowest friction for a run-once slice.
@@ -40,25 +40,27 @@ platforms before `data-model.md` is acted on in code.
 - **verify-at-M0**: Confirm the API key is enabled for YouTube Data API v3 and that the chosen
   show's channel is enumerable within quota.
 
-## Decision 4 — Spotify read access *(verify-at-M0)*
+## Decision 4 — Apple Podcasts read access *(verify-at-M0)* — amended 2026-10-21
 
-- **Decision**: Use the **Spotify Web API** with the **Client Credentials** flow to read the
-  show and its episodes: `GET /shows/{id}` and `GET /shows/{id}/episodes` for episode name,
-  description, release date, and duration.
-- **Access**: Client Credentials (app client id/secret) is sufficient for public catalog
-  metadata; no user login needed. Note Spotify exposes **no public listen counts** — consistent
-  with the constitution's "no owner-only data."
+- **Original decision (abandoned)**: Spotify Web API via Client Credentials. **Abandoned** because
+  Spotify refused every catalog read for the operator's app ("Active premium subscription required
+  for the owner of the app"). See `decisions.md` (2026-10-21).
+- **Decision**: Use the **public iTunes lookup API** to read the show's episodes:
+  `GET https://itunes.apple.com/lookup?id={collectionId}&entity=podcastEpisode` for episode name,
+  description, release date (`releaseDate`), and duration (`trackTimeMillis`).
+- **Access**: **No authentication** — no client id/secret, no token, no market, no subscription.
+  Apple exposes **no public listen counts** — consistent with the constitution's "no owner-only data."
 - **Rationale**: Provides the matching signals (title, release date, duration) needed to fuse
-  against YouTube; read-only and ownership-free.
-- **verify-at-M0**: Confirm app credentials return the show and a full episode page; confirm a
-  market param is not required for the chosen show.
+  against YouTube; read-only, ownership-free, and credential-free (removes the Spotify blocker).
+- **verify-at-M0**: Confirm the lookup returns the chosen show's episodes. (Verified live on
+  2026-10-21.)
 
 ## Decision 5 — The one writeback & its target *(verify-at-M0)*
 
 - **Decision**: The writeback is **`videos.update` on a video we own on our throwaway YouTube
-  test channel** — updating its description ("show notes") to record the linked Spotify episode.
-  Spotify is **not** a writeback target: the Spotify Web API does not permit publishing/editing
-  podcast episodes, so attempting it would violate Principle V. YouTube is the write side.
+  test channel** — updating its description ("show notes") to record the linked Apple Podcasts
+  episode. Apple Podcasts is **not** a writeback target: the iTunes API is read-only (no
+  publishing/editing), so attempting it would violate Principle V. YouTube is the write side.
 - **Access**: `videos.update` requires **OAuth 2.0** with scope
   `https://www.googleapis.com/auth/youtube.force-ssl`, authorized as the owner of the test
   channel. Cost 50 units.
@@ -69,11 +71,11 @@ platforms before `data-model.md` is acted on in code.
 
 ## Decision 6 — The one decision rule
 
-- **Decision**: Rule = **"episode exists on Spotify but has no corresponding YouTube clip yet."**
-  Pure function over `Episode` objects; returns the subset needing action. Read-only.
+- **Decision**: Rule = **"episode exists on Apple Podcasts but has no corresponding YouTube clip
+  yet."** Pure function over `Episode` objects; returns the subset needing action. Read-only.
 - **Rationale**: Directly exercises the fused object (needs both-platform presence data), is the
   example named in the constitution/spec, and pairs naturally with the YouTube writeback.
-- **Alternatives considered**: "YouTube video missing show notes" (also valid; the Spotify-only
+- **Alternatives considered**: "YouTube video missing show notes" (also valid; the Apple-only
   rule better showcases cross-platform fusion).
 
 ## Decision 7 — Entity-resolution strategy (the hard core)
@@ -105,10 +107,10 @@ platforms before `data-model.md` is acted on in code.
 ## M0 verification checklist (gate before modeling in code)
 
 - [ ] YouTube Data API v3 enabled; API key reads the chosen show within quota.
-- [ ] Spotify app credentials read the chosen show + episodes.
+- [x] Apple Podcasts iTunes lookup returns the chosen show + episodes (no credentials). *(verified 2026-10-21)*
 - [ ] Chosen show confirmed present on both platforms with enough episodes to demonstrate matching.
 - [ ] Test-channel OAuth token obtained with `youtube.force-ssl`; `videos.update` on an owned test video succeeds.
-- [ ] Confirmed Spotify permits no episode writeback (so YouTube is the sole write side).
+- [x] Confirmed Apple Podcasts permits no episode writeback — read-only API (so YouTube is the sole write side).
 
 All **NEEDS CLARIFICATION** items from Technical Context are resolved above. The only residual
 is the **live confirmation** that M0 performs; the plan deliberately gates coded modeling on it.

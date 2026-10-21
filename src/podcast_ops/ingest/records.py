@@ -11,11 +11,11 @@ from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
-Platform = Literal["youtube", "spotify"]
+Platform = Literal["youtube", "apple"]
 
 
 class Engagement(BaseModel):
-    """Public engagement counts (YouTube only). Spotify exposes none."""
+    """Public engagement counts (YouTube only). Apple Podcasts exposes none."""
 
     views: Optional[int] = None
     likes: Optional[int] = None
