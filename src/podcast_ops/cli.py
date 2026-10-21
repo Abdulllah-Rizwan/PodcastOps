@@ -24,7 +24,7 @@ def _cmd_check_access(config: Config) -> int:
         all_ok = all_ok and r.ok
         print(f"  [{mark}] {r.name}: {r.message}")
     if all_ok:
-        print("Gate PASSED — modeling may proceed.")
+        print("Gate PASSED - modeling may proceed.")
         return 0
     print("Gate FAILED - resolve the above before modeling against real data (Principle V).")
     return 1
@@ -36,6 +36,7 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
 
     sub.add_parser("check-access", help="M0: confirm API access for the one read and one write")
+    sub.add_parser("auth", help="one-time OAuth consent to mint the YouTube write token")
     sub.add_parser("ingest", help="DATA: read both platforms into staging")
     sub.add_parser("fuse", help="DATA: resolve + conform staging into Episode objects")
     sub.add_parser("decide", help="LOGIC: apply the one read-only rule")
@@ -49,6 +50,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "check-access":
         return _cmd_check_access(config)
+    if args.command == "auth":
+        from podcast_ops.commands.auth import run_auth
+
+        return run_auth(config)
     if args.command == "ingest":
         from podcast_ops.commands.ingest import run_ingest
 

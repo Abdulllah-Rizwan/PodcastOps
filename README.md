@@ -26,6 +26,7 @@ APIs. Secrets never belong in source control.
 ## Run the spine
 
 ```bash
+podcast-ops auth            # one-time: OAuth consent -> secrets/youtube_token.json (write only)
 podcast-ops check-access     # M0 gate: confirm the one read + one write are permitted
 podcast-ops ingest          # DATA: read both platforms -> run/staging/
 podcast-ops fuse            # DATA: resolve + conform -> run/objects/episodes.json
