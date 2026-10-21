@@ -1,0 +1,35 @@
+[
+  {
+    "id": "yt_a",
+    "snippet": {
+      "title": "The Future of AI with Jane Doe",
+      "description": "A conversation about AI.",
+      "publishedAt": "2024-03-01T10:00:00Z",
+      "channelId": "UC_test_channel"
+    },
+    "contentDetails": { "duration": "PT1H" },
+    "statistics": { "viewCount": "1000", "likeCount": "100", "commentCount": "10" }
+  },
+  {
+    "id": "yt_b",
+    "snippet": {
+      "title": "Space Travel 101 [Full Episode]",
+      "description": "All about rockets.",
+      "publishedAt": "2024-03-08T10:00:00Z",
+      "channelId": "UC_test_channel"
+    },
+    "contentDetails": { "duration": "PT45M" },
+    "statistics": { "viewCount": "500", "likeCount": "50", "commentCount": "5" }
+  },
+  {
+    "id": "yt_d",
+    "snippet": {
+      "title": "Bonus Q and A",
+      "description": "Listener questions.",
+      "publishedAt": "2024-03-15T10:00:00Z",
+      "channelId": "UC_test_channel"
+    },
+    "contentDetails": { "duration": "PT20M" },
+    "statistics": { "viewCount": "200", "likeCount": "20", "commentCount": "2" }
+  }
+]

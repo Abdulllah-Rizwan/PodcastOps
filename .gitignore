@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# Secrets / local config — NEVER commit (Principle VI)
+.env
+secrets/
+*.token.json
+
+# Runtime output of the slice
+run/
+
+# Tooling / OS
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "podcast-ops"
+version = "0.1.0"
+description = "Podcast Ops-Hub validation slice: one end-to-end data -> logic -> action spine."
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2",
+    "rapidfuzz>=3",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+# Live transport only — not needed for tests or mock-mode runs.
+live = [
+    "google-api-python-client>=2",
+    "google-auth-oauthlib>=1",
+]
+dev = [
+    "pytest>=7",
+    "ruff>=0.5",
+    "black>=24",
+]
+
+[project.scripts]
+podcast-ops = "podcast_ops.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.black]
+line-length = 100
