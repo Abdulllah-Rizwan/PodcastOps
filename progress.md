@@ -19,7 +19,12 @@ whenever a meaningful step completes.
 - **Active feature**: `specs/001-podcast-ops-slice` (the full data → logic → action validation slice).
 - **Current milestone**: **M0, M1, M2, M3 all done** (live). M4 (loop) and M5 (widen) remain deferred per the constitution — not part of this slice.
 - **Decided stack**: Python 3.11+, JSON-file storage, YouTube Data API v3 (read via API key / write via OAuth to test channel), **Apple Podcasts via the public iTunes lookup API (read, no auth)** — replaced Spotify on 2026-10-21, see `decisions.md`. Writeback = `videos.update` show-notes on our test channel; rule = "on Apple Podcasts, no YouTube clip yet".
-- **Next action**: None required to finish the slice — it is done. Optional follow-ups only: the deferred milestones M4 (close one loop) and M5 (widen), which are explicitly out of scope for this validation slice.
+- **Committed & pushed**: commit `bcc5502` on `main` → `github.com/Abdulllah-Rizwan/PodcastOps` (the Spotify→Apple refactor + the completed live run). No secrets committed (`.env`, `secrets/`, `run/` gitignored).
+- **Next action (NEXT SESSION — a decision, not pending work)**: The slice is DONE; nothing is required to finish it. Paused on 2026-10-21 to decide **where to take the project next**. Open options to weigh tomorrow:
+  - **M4 — close one loop**: feed a signal (e.g., the writeback's own result, or a YouTube public engagement count) back into the logic so the rule adapts. The first move past "data → logic → action" into "learning".
+  - **M5 — widen**: add a second decision rule, a third platform, or more of the one show — stress the entity-resolution core at larger scale.
+  - **Harden what exists**: real pagination for Apple (currently 200-episode cap), richer matcher tuning/metrics, or a small report of the fused object set.
+  - Each of these is a *new* scope decision beyond the ratified slice — if chosen, start a new Spec Kit cycle (`/speckit-specify`) and log the scope change, per the constitution.
 - **Blockers**: None.
 - **Live run config (2026-10-21)**: Huberman Lab — `TARGET_YOUTUBE_SOURCE=UC2D2CMWXMOVWx7giW1n3LIg`, `TARGET_APPLE_SHOW=1545953110`, write target `TEST_VIDEO_ID=CfRIjrzeGrU`.
 
@@ -51,6 +56,8 @@ whenever a meaningful step completes.
   `CfRIjrzeGrU` → `success`. `act --real` again → `skipped_idempotent` (no duplicate). All three
   attempts in `run/action/audit.log`. **SC-001..SC-006 satisfied — Definition of Done met.**
 - Marked T031 `[X]`; 32/32 tasks complete.
+- Committed (`bcc5502`) and pushed to `main`. **Session paused here — next session decides the
+  project's direction** (M4 loop / M5 widen / harden); see "Next action" above.
 
 ### 2026-10-21 (later) — switched second read platform Spotify → Apple Podcasts
 
