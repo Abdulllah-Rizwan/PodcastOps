@@ -27,6 +27,54 @@ followed the plan, it does **not** belong here (put status in `progress.md` inst
 
 ## Log
 
+## 2026-10-23 — Pivot: narrow validation slice → reusable AI-native ontology engine
+
+- **Original plan**: A deliberately **narrow, throwaway validation slice** whose only goal was to
+  prove the data → logic → action spine *once* on real data. The constitution (v1.1.0) explicitly
+  forbade a **general/reusable ontology engine**, any **ML**, a **multi-platform product**, and
+  productization; success was defined as "the spine runs end-to-end on real data, once," after
+  which we **stop**.
+- **Decision taken instead**: With the slice **complete and proven** (live end-to-end run on
+  2026-10-21, commit `bcc5502`), build the real thing it was a proof-of-concept for: a **reusable,
+  AI-native ontology engine** (objects, typed links, read-only functions, validated actions),
+  **proven by verticals**. The podcast operation becomes **vertical #1** (the live demo); a second,
+  different vertical later (M5) is the **generality proof**. This is a **full-stack** build: web UI
+  (ontology explorer + ops dashboard + AI agent), API backend (FastAPI over the existing Python
+  core), Postgres + **pgvector**, a background worker, an **AI layer grounded in the ontology**,
+  an **eval + observability** harness, and **cloud deployment** with CI/CD.
+- **Why the original was abandoned**: Not a blocker — a deliberate, owner-chosen change of ambition.
+  The slice succeeded, and the owner decided the valuable, market-relevant asset is the **engine /
+  ontology pattern itself** (the Palantir-style objects → functions → actions model, now compelling
+  because LLM agents are far more reliable when grounded in a typed ontology), not a single podcast
+  app. Learning-by-building and showcasing full-stack + AI-engineering expertise are explicit goals;
+  a usable tool and possible product are secondary.
+- **Impact**:
+  - **Scope**: materially widened. Three former hard boundaries are **reversed** — the bans on a
+    general/reusable engine, on ML/AI, and on productization / "runs once." Guarded by a new
+    discipline: **generality is earned by a second vertical, never asserted ahead of need** (YAGNI
+    applied to generality); the engine must be built vertical-shaped first with clean seams, and
+    must not grow abstractions no current vertical uses.
+  - **Constitution**: amended **1.1.0 → 2.0.0** (MAJOR). Added principles: *Engine First, Proven by
+    Verticals* and *AI Grounded in the Ontology, and Evaluated*. Retained (some generalized): the
+    data → logic → action stage separation, *entity resolution is the hard core*, *safe/logged/
+    mock-first actions* (now typed/idempotent/audited + human-in-the-loop for AI-proposed mutations),
+    *confirm access before modeling*, and *high code quality* (extended full-stack). See the Sync
+    Impact Report at the top of the constitution.
+  - **What survives from the slice**: the proven Python core (ingest gateways, staging, matcher,
+    `Episode` objects, decision rule, writeback seam + audit log) becomes the seed of the engine;
+    the 199 real matched pairs from the live run seed the entity-resolution golden eval set.
+  - **Milestones**: re-baselined to M0 full-stack skeleton → M1 generalized ontology core → M2
+    vector-based entity resolution + evals → M3 AI agent over the ontology → M4 harden/deploy → M5
+    vertical #2 (generality proof). The old slice milestones (M0–M3) are satisfied and folded in.
+  - **Follow-up**: `CLAUDE.md` rewritten to the engine direction (done, 2026-10-23); a fresh Spec
+    Kit cycle (`/speckit-specify` → `plan` → `tasks`) must define the new full-stack scope before
+    implementation.
+- **Links**: constitution v2.0.0 (`.specify/memory/constitution.md`), Principles I & VI new;
+  `CLAUDE.md` (rewritten); `progress.md` (slice-complete history); the completed slice at commit
+  `bcc5502`.
+
+---
+
 ## 2026-10-21 — Second read platform: Spotify → Apple Podcasts
 
 - **Original plan**: Read the one show from **YouTube + Spotify**; Spotify read via the Web API

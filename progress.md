@@ -15,33 +15,66 @@ whenever a meaningful step completes.
 
 ## Current Status
 
-- **Phase**: ✅ **SLICE COMPLETE** (2026-10-21). Full data → logic → action spine ran end-to-end on live data with a real, safe, logged, idempotent writeback to the test channel. Definition of Done met. 32/32 tasks done; 16/16 tests pass; lint/format clean.
-- **Active feature**: `specs/001-podcast-ops-slice` (the full data → logic → action validation slice).
-- **Current milestone**: **M0, M1, M2, M3 all done** (live). M4 (loop) and M5 (widen) remain deferred per the constitution — not part of this slice.
-- **Decided stack**: Python 3.11+, JSON-file storage, YouTube Data API v3 (read via API key / write via OAuth to test channel), **Apple Podcasts via the public iTunes lookup API (read, no auth)** — replaced Spotify on 2026-10-21, see `decisions.md`. Writeback = `videos.update` show-notes on our test channel; rule = "on Apple Podcasts, no YouTube clip yet".
-- **Committed & pushed**: commit `bcc5502` on `main` → `github.com/Abdulllah-Rizwan/PodcastOps` (the Spotify→Apple refactor + the completed live run). No secrets committed (`.env`, `secrets/`, `run/` gitignored).
-- **Next action (NEXT SESSION — a decision, not pending work)**: The slice is DONE; nothing is required to finish it. Paused on 2026-10-21 to decide **where to take the project next**. Open options to weigh tomorrow:
-  - **M4 — close one loop**: feed a signal (e.g., the writeback's own result, or a YouTube public engagement count) back into the logic so the rule adapts. The first move past "data → logic → action" into "learning".
-  - **M5 — widen**: add a second decision rule, a third platform, or more of the one show — stress the entity-resolution core at larger scale.
-  - **Harden what exists**: real pagination for Apple (currently 200-episode cap), richer matcher tuning/metrics, or a small report of the fused object set.
-  - Each of these is a *new* scope decision beyond the ratified slice — if chosen, start a new Spec Kit cycle (`/speckit-specify`) and log the scope change, per the constitution.
+- **Phase**: 🚀 **PIVOTED — building the ontology engine** (2026-10-23). The original narrow validation slice is **complete and proven** (2026-10-21, commit `bcc5502`); the project has been deliberately redefined into a reusable, **AI-native ontology engine proven by verticals** (constitution MAJOR bump **1.1.0 → 2.0.0**). Podcast ops = **vertical #1** (the live demo). See `decisions.md` (2026-10-23).
+- **Active feature**: `specs/002-ontology-engine` — the full-stack engine. Its **full Spec Kit cycle is complete**: `spec.md` + requirements checklist (`/speckit-specify`), `plan.md` + `research.md` + `data-model.md` + `contracts/` + `quickstart.md` (`/speckit-plan`), and `tasks.md` with **66 tasks** (`/speckit-tasks`). `specs/001-podcast-ops-slice` remains the *completed* slice.
+- **Current milestone**: re-baselined (see tracker). **Starting at M0 (full-stack skeleton).** The old slice's M0–M3 are satisfied and folded in; its proven Python core seeds the engine.
+- **Decided direction**: engine-is-the-product; generality *earned* by a second vertical (M5), never asserted. Full-stack: web UI (ontology explorer + ops dashboard + AI agent), FastAPI backend over the existing Python core, Postgres + **pgvector**, background worker, AI layer grounded in the ontology, eval + observability harness, cloud (default: GCP Cloud Run + Vercel).
+- **Carried forward from the slice**: proven YouTube + Apple read, honest entity resolution (`Episode` fusion), the decision-rule pattern, and the safe/mock-first/idempotent/audited writeback seam. The **199 real matched pairs** from the live run seed the entity-resolution golden eval set.
+- **Committed & pushed**: slice at commit `bcc5502` on `main` → `github.com/Abdulllah-Rizwan/PodcastOps`. The pivot checkpoint — governance docs (constitution v2.0.0, CLAUDE.md, decisions.md, this file) **plus** the complete `specs/002-ontology-engine/` planning cycle (spec + plan + tasks) — is **committed and pushed to `main`** as of 2026-10-23. No secrets committed (`.env`, `secrets/`, `run/` gitignored).
+- **Next action**: run `/speckit-implement` for `002-ontology-engine`, starting with Phase 1–2 (Setup + Foundational = the M0 full-stack skeleton) and the US1 MVP. No tasks done yet (0/66). Decided plumbing defaults (pgvector, Cloud Run/Vercel) are baked into the plan; confirm/override during implementation.
 - **Blockers**: None.
-- **Live run config (2026-10-21)**: Huberman Lab — `TARGET_YOUTUBE_SOURCE=UC2D2CMWXMOVWx7giW1n3LIg`, `TARGET_APPLE_SHOW=1545953110`, write target `TEST_VIDEO_ID=CfRIjrzeGrU`.
+- **Live run config (from the slice, still valid for vertical #1)**: Huberman Lab — `TARGET_YOUTUBE_SOURCE=UC2D2CMWXMOVWx7giW1n3LIg`, `TARGET_APPLE_SHOW=1545953110`, write target `TEST_VIDEO_ID=CfRIjrzeGrU`.
 
-### Milestone tracker (from the constitution)
+### Milestone tracker (re-baselined to constitution v2.0.0)
 
 | Milestone | Description | Status |
 |-----------|-------------|--------|
-| M0 | Confirm API access for the one read and the one write | ✅ Done — gate PASSED 3/3 live (YouTube read, Apple read, YouTube write scope) |
-| M1 | Read + fuse both platforms into `Episode` objects (entity resolution) | ✅ Done — live: 541 YouTube + 200 Apple → 542 Episodes, 199 two-sided matched |
-| M2 | One function produces a decision | ✅ Done (rule + tests; live: selected 1 Apple-only episode) |
-| M3 | One action: mock-logged first, then real against test channel, safe + logged | ✅ Done — mock then real `videos.update` to `CfRIjrzeGrU`; retry `skipped_idempotent`; all logged |
-| M4 | _(later)_ Close one loop | ⬜ Deferred |
-| M5 | _(later)_ Widen | ⬜ Deferred |
+| M0 | Full-stack skeleton: API over existing core, Postgres, minimal UI, deployed thin (no AI yet) | ⬜ Next |
+| M1 | Generalized ontology core: declarative object/link/function/action registries; podcast as a vertical plugin | ⬜ |
+| M2 | Entity resolution upgraded (embeddings + vector store) + precision/recall evals vs golden set | ⬜ |
+| M3 | AI agent over the ontology: grounded retrieval + answers; proposes validated, audited, human-approved actions; AI evals + tracing | ⬜ |
+| M4 | Harden & deploy for real: CI/CD eval gate, observability, secrets, autoscale; UI complete | ⬜ |
+| M5 | Vertical #2: a second domain on the same engine, no engine rewrite — the generality proof | ⬜ |
+
+**Prior (slice) milestones — all ✅ done 2026-10-21, folded into the above:** M0 access gate (3/3), M1 fuse (541 YouTube + 200 Apple → 542 Episodes, 199 matched), M2 one decision rule, M3 mock-then-real `videos.update` to `CfRIjrzeGrU` (idempotent, audited).
 
 ---
 
 ## History (newest first)
+
+### 2026-10-23 (later) — full Spec Kit cycle for `002-ontology-engine` complete; pivot checkpoint committed
+
+- Ran the complete planning cycle for the engine feature: `/speckit-specify` → `spec.md` +
+  requirements checklist; `/speckit-plan` → `plan.md`, `research.md`, `data-model.md`,
+  `contracts/` (api, engine-ports, agent-tools), `quickstart.md`; `/speckit-tasks` → `tasks.md`
+  with **66 tasks** across 7 phases (Setup, Foundational, US1 fused-ontology MVP, US2 decide→approve→act,
+  US3 resolution-measured, US4 grounded AI agent, Polish). No constitution violations flagged.
+- **Session-recovery note**: the prior session was terminated mid-flight (an unrelated terminal
+  `update` command crashed it) *after* `tasks.md` was written but *before* `progress.md`/`decisions.md`
+  were refreshed — so this file had wrongly still listed `/speckit-specify` as the next action. On
+  resume, verified all `specs/002-ontology-engine/` artifacts are intact (none truncated) and that
+  **no implementation had started** (0/66 tasks, `src/` untouched since the slice).
+- Committed and pushed the pivot checkpoint to `main`: governance docs (constitution v2.0.0,
+  CLAUDE.md, decisions.md, this file) + the entire `specs/002-ontology-engine/` planning cycle.
+- Next: `/speckit-implement` — Phase 1–2 (M0 skeleton) then US1 MVP.
+
+### 2026-10-23 — PIVOT: narrow slice → reusable AI-native ontology engine
+
+- The completed slice proved the data → logic → action spine. Owner decided the valuable asset is
+  the **engine / ontology pattern itself**, not a single podcast app — so the project is redefined
+  into a reusable, AI-native **ontology engine proven by verticals** (podcast = vertical #1; a
+  second vertical later = the generality proof). Learning-by-building + showcasing full-stack/AI
+  expertise are the explicit goals; a usable tool / possible product are secondary.
+- Governance done this session: constitution amended **1.1.0 → 2.0.0** (MAJOR — reverses the former
+  bans on a general engine, on ML/AI, and on "runs once / not a product"; adds *Engine First,
+  Proven by Verticals* and *AI Grounded in the Ontology, and Evaluated*; keeps stage separation,
+  entity-resolution-is-the-hard-core, safe/mock-first actions, confirm-access, code quality).
+  `CLAUDE.md` rewritten to the engine direction; `decisions.md` pivot entry added; this file
+  re-baselined (milestones M0–M5 redefined).
+- Guardrail carried forward: **generality is earned by vertical #2, never asserted** — build
+  vertical-shaped first with clean seams; no abstractions a current vertical doesn't use.
+- Next: `/speckit-specify` the full-stack engine scope (running now), then `/speckit-plan` and
+  `/speckit-tasks`. Governance doc changes not yet committed.
 
 ### 2026-10-21 (latest) — SLICE COMPLETE: live end-to-end run (T031, Definition of Done)
 

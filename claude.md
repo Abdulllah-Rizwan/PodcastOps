@@ -1,87 +1,134 @@
-# CLAUDE.md — Podcast Ops-Hub (validation slice)
+# CLAUDE.md — Podcast Ops-Hub → Ontology Engine
 
 ## Purpose of this file
 Durable context and guardrails for this project. Read before every task. This is the
 project's constitution-in-brief: it fixes **what we're building, why, and the hard
 boundaries**. Detailed specs are produced separately (SDD); this file governs them.
+The full constitution is `.specify/memory/constitution.md` (**v2.0.0**); where this
+brief and that document differ, the constitution governs.
+
+> **Pivot note (2026-10-23):** the original narrow validation slice is **complete** and
+> proven. The project has been deliberately redefined from that throwaway slice into a
+> reusable **ontology engine** (constitution MAJOR bump 1.1.0 → 2.0.0; see `decisions.md`).
+> This file reflects the new direction.
 
 ## What we are building
-A deliberately **narrow vertical slice** of a "podcast ops-hub" that proves one
-end-to-end spine of the **data → logic → action** pattern: an operational layer that
-fuses data from systems we don't own, decides on it, and writes a change back out
-safely.
+A reusable, **AI-native ontology engine** that implements the **data → logic → action**
+pattern — objects fused from systems we don't own, read-only functions that decide, and
+safe actions that write changes back out — and we **prove it by building verticals on top**.
 
-The goal is to **demonstrate the pattern**, not to ship a product.
-Success = the spine runs end-to-end on real data, once.
+- The **engine is the product.** It is domain-agnostic: an object/link registry, read-only
+  functions, typed actions, the ingestion/resolution pipeline, an API, and an AI runtime.
+- A **vertical** is a plugin/configuration on the engine. **Podcast operations is vertical #1**
+  and is the live demo that proves the engine on real, messy, cross-platform data.
+- **Generality is *earned*, never asserted.** One vertical is a demo; **two different verticals
+  on one engine** are the proof the engine is real. Vertical #2 is planned (M5), not yet built.
+
+### This project IS (as of v2.0.0)
+- a general, reusable ontology engine
+- an AI-native operational platform (AI grounded in the ontology)
+- full-stack: web UI, API backend, Postgres + vector store, background worker, cloud
+- a candidate product, if real demand appears
 
 ### This project is NOT
-- a clip-optimization tool or podcast SaaS
-- a general / reusable "ontology engine"
-- a multi-platform product
-- an actual podcast (we own a throwaway test channel only, for writes)
+- a generality built in the abstract with no real user (the classic "worse Foundry" trap)
+- an engine that grows abstractions no current vertical actually uses
+- an actual podcast business (we own a throwaway test channel only, for writes)
 
-If a task drifts toward any of these, stop and flag it.
+If a task drifts toward building speculative generality ahead of a real second need, or
+toward collapsing the engine/vertical seam, stop and flag it.
 
-## The framework: data → logic → action (narrow)
-Three stages. Keep the vocabulary exact — sloppy wording here causes rework.
+## The framework: data → logic → action = the ontology
+Three stages, exact vocabulary. Sloppy wording here causes rework.
 
-- **Data** — raw platform data lands in a **staging area first**, is then **resolved
-  and conformed**, and only *then* becomes an **object**. The object is the clean,
-  fused result, never the raw inlet. Core object type: `Episode`.
-  An object *type* ≈ a table; an object *instance* ≈ a row.
-- **Logic (= function)** — read-only. It **decides** ("what should we do?").
-  Plain rules only for this slice. No ML, no forecasting.
-- **Action** — the **only** thing that changes the world. It writes back to a
-  platform, and it is **safe** (can fail, retry) and **logged**.
-  Deciding is not acting — keep them separate.
+- **Data → Objects** — raw platform data lands in a **staging area first**, is **resolved and
+  conformed**, and only *then* becomes an **object**. The object is the clean, fused result,
+  never the raw inlet. The engine models **object types** (≈ tables), **object instances**
+  (≈ rows), and typed **links** between types (e.g. `Episode —features→ Guest`,
+  `Episode —hasClip→ Clip`). Vertical #1's core object type is `Episode`.
+- **Logic = Functions** — read-only. They **decide** ("what should we do?") and change nothing.
+  Held in an inspectable registry.
+- **Action** — the **only** thing that changes the world. Typed, validated, safe (can fail,
+  retry), **idempotent**, and **logged/audited**. Deciding is not acting — keep them separate.
 
-**Entity resolution is the hard core of this project**: correctly matching the same
-real-world thing (an episode, a guest) across platforms that use mismatched IDs,
-titles and schemas. Never paper over it — it is the part worth proving.
+Object types, links, functions, and actions are declared **declaratively** in the engine's
+registries, so a vertical adds them as config/plugins, not by editing engine core.
 
-Deferred, acknowledged, **do not build in this slice**: the learning **loop**
-(performance feeding back into logic) and the **governance/security** layer.
-These are later milestones.
+**Entity resolution is the hard core**: correctly matching the same real-world thing (an
+episode, a guest) across platforms with mismatched IDs, titles and schemas. Never paper over it
+— it is the part worth proving. Where embeddings/vector similarity are used, keep a deterministic
+baseline matcher to **evaluate** against. Resolution must be explicit, inspectable, and measured.
 
-## Scope of the validation slice (hard boundary)
-- **Read:** ONE real, public show, from **two** platforms — **YouTube + Apple Podcasts** —
-  using public metadata (+ YouTube public engagement counts). No ownership needed to read.
-  (Apple replaced Spotify on 2026-10-21 — Spotify's API required a Premium app-owner account;
-  see `decisions.md`.)
-- **Fuse:** match the same episode across both platforms into one `Episode` object.
-  ← this is the entity-resolution proof.
-- **Logic:** exactly **one** rule/function that produces a decision
-  (e.g. "episode exists on Apple Podcasts but has no YouTube clip yet").
-- **Action:** exactly **one** writeback, to **our own throwaway test channel**
-  (e.g. post a draft clip / update show notes / schedule a post). Never to anyone
-  else's channel.
-- **Out of scope:** the loop, analytics dashboards, extra platforms, ML.
+## AI in the engine (grounded + evaluated)
+- AI reads the world through **objects, links, and functions**, and changes the world **only
+  through validated actions**. The LLM *proposes*; the engine *validates and records*; a human
+  *approves* mutations (human-in-the-loop).
+- Retrieval feeding an LLM is **grounded in the ontology** (objects + their links / embeddings),
+  not unstructured dumps.
+- **Evals are mandatory.** Entity resolution has precision/recall against a labeled golden set;
+  AI generation/action-selection has deterministic + rubric/LLM-as-judge checks; AI calls are
+  traced. Eval suites run in CI and gate changes against regression.
 
-Owner-only data (listen counts, retention curves for a show we don't own) is **not**
-accessible — do not design around it.
+## Scope & architecture (hard boundary)
+Full-stack. All layers in scope:
+- **UI** — ontology explorer + the vertical's ops dashboard + the AI agent/chat.
+- **API backend** — over the ontology core (FastAPI over the existing Python core).
+- **Storage** — Postgres for objects/staging + **pgvector** for embeddings (default).
+- **Worker** — background ingestion.
+- **AI layer** — grounded retrieval + agent.
+- **Evals + observability** — eval harness + tracing.
+- **Cloud** — containerized, deployed, with CI/CD (default target: GCP Cloud Run + Vercel).
+
+**Vertical #1 (podcast ops):** object types `Show`, `Episode`, `Guest`, `Clip`; data sources
+**YouTube + Apple Podcasts**; its functions; its actions (writeback to our own throwaway test
+channel); its UI views. The entity-resolution proof — match one real episode across YouTube and
+Apple into one `Episode` — MUST be preserved.
+
+**Out of scope until deliberately chosen and logged:** the governance/security layer as a product
+feature; multi-tenant productization; any data source that hasn't passed the access gate below.
 
 ## Operating principles (apply to every task, including Claude Code's)
-1. **Ship-not-learn.** The smallest thing that runs end-to-end wins. Prefer a working
-   spine over a complete feature.
-2. **Hold the line on scope creep.** If a change adds a platform, a model, a dashboard,
-   the loop, or "make it general," it is out of scope for the slice — name it and defer it.
-3. **Writeback behind a seam, mock first.** The action first **logs**
-   `"would publish X to Y"` instead of calling the real API. Prove the whole spine
-   moves, *then* swap in the real call against the test channel.
-4. **Confirm API access before modeling.** Before any object is modeled, verify the two
-   platforms actually permit the one read and the one write planned (quotas, auth, write
-   scopes). Do not design a writeback a platform forbids.
-5. **Separate raw from object.** Raw → staging → resolve + conform → object.
-   Never ingest raw straight into an object.
+1. **Engine first, earn generality.** Build vertical-shaped first with clean seams; do not add
+   abstractions no current vertical uses. Keep vertical #1 working end-to-end at all times.
+2. **Hold the engine/vertical seam.** Vertical specifics MUST NOT leak into the engine. If a
+   change blurs the seam or adds speculative generality, name it and defer it.
+3. **Separate raw from object.** Raw → staging → resolve + conform → object. Never ingest raw
+   straight into an object.
+4. **Deciding ≠ acting.** Functions are read-only; only validated actions mutate external state.
+5. **Actions: safe, logged, mock-first, owned-target-only.** An action first **logs**
+   `"would publish X to Y"` before any real call. Real actions are safe, idempotent, audited, and
+   target only channels we own. AI-proposed actions require human approval.
+6. **AI grounded + evaluated.** AI reads via the ontology, writes only via actions, and is
+   covered by evals + tracing.
+7. **Confirm access before modeling.** Before modeling an object/action against a source, verify
+   the source actually permits the planned read/write (quotas, auth, scopes). Don't design a
+   writeback a platform forbids. Applies to every new source a vertical introduces.
+8. **High quality, full stack.** Clear structure mirroring the engine/vertical + data→logic→action
+   boundaries; patterns where they add clarity (YAGNI otherwise); dependencies inverted at external
+   boundaries so APIs/LLM/vector store/writeback are mockable; tests for resolution & functions,
+   mock-mode action seam, AI evals; no secrets committed, config externalized (secret manager in prod).
 
 ## Milestones
-- **M0** — confirm API access for the one read and the one write.
-- **M1** — read + fuse both platforms into `Episode` objects (entity resolution working).
-- **M2** — one function produces a decision.
-- **M3** — one action: mock-logged first, then real against the test channel, safe + logged.
-- *(later)* **M4** — close one loop.  **M5** — widen.
+- **M0** — Full-stack skeleton: API over the existing core, Postgres, minimal UI, deployed thin
+  (no AI yet — prove the stack moves).
+- **M1** — Generalized ontology core: declarative object/link/function/action registries; podcast
+  defined as a vertical plugin.
+- **M2** — Entity resolution upgraded (embeddings + vector store) with precision/recall evals
+  against a labeled golden set (seeded from the real matched pairs already produced).
+- **M3** — AI agent over the ontology: grounded retrieval + answers; proposes validated, audited,
+  human-approved actions; AI evals + tracing.
+- **M4** — Harden & deploy for real: CI/CD with the eval gate, observability, secrets, autoscale;
+  UI complete (explorer + ops dashboard + agent).
+- **M5** — Vertical #2: a second, different domain runs on the same engine with no engine rewrite —
+  **the generality proof.**
 
-## Definition of done (slice)
-One run: pulls a real show from YouTube + Apple Podcasts, fuses its episodes correctly, applies
-the one rule, and executes one safe, logged writeback to the test channel. If that runs
-end-to-end, the slice is done. Stop there.
+## Definition of done (current build)
+The engine runs the podcast vertical full-stack in the cloud — UI → API → ontology (objects fused
+by honest entity resolution) → AI grounded in the ontology → a safe, idempotent, audited,
+human-approved action — with eval suites green in CI. The **engine is proven** only when a second,
+different vertical (M5) runs on it with no engine rewrite.
+
+## History
+The original narrow validation slice (read YouTube + Apple, fuse `Episode` objects, one rule, one
+mock-then-real writeback) ran end-to-end on live data on 2026-10-21 and is complete. See
+`progress.md` for that history and `decisions.md` for the 2026-10-23 pivot to the ontology engine.
