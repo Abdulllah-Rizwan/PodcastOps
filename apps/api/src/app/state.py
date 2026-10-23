@@ -20,6 +20,7 @@ from ontology_engine.store.repository import Repository
 
 if TYPE_CHECKING:
     from ontology_engine.actions.port import ActionHandler
+    from ontology_engine.ai.propose import ActionProposal
 
 JobStatus = Literal["queued", "running", "completed", "failed"]
 
@@ -65,6 +66,8 @@ class AppContext:
     action_handlers: "dict[str, ActionHandler]" = field(default_factory=dict)
     # Latest ER eval result per matcher kind (populated by the evals endpoints).
     evals: dict[str, object] = field(default_factory=dict)
+    # Agent-proposed actions awaiting human approval, keyed by proposal id.
+    proposals: "dict[str, ActionProposal]" = field(default_factory=dict)
 
 
 def get_ctx(request: Request) -> AppContext:

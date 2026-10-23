@@ -27,6 +27,35 @@ followed the plan, it does **not** belong here (put status in `progress.md` inst
 
 ## Log
 
+## 2026-10-23 — AI layer: lazy SDK, propose-only agent, hermetic evals; streaming + link-traversal deferred (US4)
+
+- **Decision**: build the US4 agent so the engine imports and the whole suite runs **without** the
+  `anthropic` SDK or an API key: the SDK is imported lazily inside `Agent.ask()`, and `/agent/ask`
+  returns a 503 when no `ANTHROPIC_API_KEY` is set. The grounded tools and `propose_action` are pure
+  read/propose logic with no SDK dependency, so the AI evals (T052) and the agent-approval path are
+  fully hermetic. Three scoped deferrals, logged here as deliberate:
+  1. `/agent/ask` returns a complete `GroundedAnswer` as JSON rather than an SSE **stream** — the
+     Tool Runner drives the loop server-side and the answer is small; streaming is a Phase 7 polish
+     item, not a correctness gap.
+  2. `traverse` reports the link types available from an object but returns **no neighbors**, because
+     the ingest pipeline does not materialize `LinkInstance`s yet (a later ontology task). The tool
+     is honest about this rather than inventing edges; `search_objects` + `get_object` +
+     `run_function` carry the grounding.
+  3. The **LLM-as-judge** (faithfulness/relevance on Claude Haiku 5.5) is a live call, so it is
+     guarded behind an API key and skipped in CI; the deterministic checks (citations resolve to real
+     objects, proposed-action inputs are schema/policy valid, grounded vs ungrounded) are the gate.
+- **Why**: Principle VII (optional/external deps behind a seam, mockable) and Principle VI (AI
+  grounded + evaluated, human-approved). Keeping the agent propose-only — `propose_action` validates
+  and mock-previews but the engine has no path from the agent to `ActionExecutor.execute` — makes
+  "zero autonomous external changes" (SC-004) a structural guarantee, not a prompt instruction. A
+  human approves through `/agent/proposals/{id}/approve`, which routes to the same approved execute
+  path as `/actions/{key}/execute`.
+- **Impact**: `ai/tools.py`, `ai/propose.py`, `ai/agent.py` (Opus 5.5, Tool Runner, `cache_control:
+  ephemeral` grounding, adaptive thinking), `ai/tracing.py` (no-op + Langfuse); `evals/agent.py` +
+  `engine/tests/test_agent_evals.py`; `routers/agent.py` + `AppContext.proposals`; `app/agent/` UI.
+- **Links**: constitution Principle IV/VI/VII, SC-004; `shared/model-migration.md` (Opus 5.5 / Tool
+  Runner guidance via the `claude-api` skill); `apps/api/tests/test_agent_api.py`.
+
 ## 2026-10-23 — Hermetic ER eval: deterministic `HashingEmbeddings` + a real golden set with curated hard negatives (US3)
 
 - **Decision**: make the entity-resolution eval and its CI gate fully hermetic by (a) adding a

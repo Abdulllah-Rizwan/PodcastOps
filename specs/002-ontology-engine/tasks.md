@@ -161,16 +161,16 @@ Langfuse trace_id is recorded.
 
 ### Tests for User Story 4 (constitution-mandated: AI evals)
 
-- [ ] T052 [P] [US4] AI eval set + runner in `engine/tests/test_agent_evals.py` and `engine/src/ontology_engine/evals/agent.py`: deterministic checks (**every citation resolves to a real ObjectInstance; proposed-action inputs are schema- and policy-valid**) + grounded vs ungrounded cases; **LLM-as-judge on Claude Haiku 5.5 (`claude-haiku-5-5`)** for faithfulness/relevance
+- [X] T052 [P] [US4] AI eval set + runner in `engine/tests/test_agent_evals.py` and `engine/src/ontology_engine/evals/agent.py`: deterministic checks (**every citation resolves to a real ObjectInstance; proposed-action inputs are schema- and policy-valid**) + grounded vs ungrounded cases; **LLM-as-judge on Claude Haiku 5.5 (`claude-haiku-5-5`)** for faithfulness/relevance
 
 ### Implementation for User Story 4
 
-- [ ] T053 [US4] Implement grounded retrieval tools (`search_objects`, `get_object`, `traverse`, `run_function`) in `engine/src/ontology_engine/ai/tools.py` (side-effect-free; return real object ids)
-- [ ] T054 [US4] Implement the agent on **Claude Opus 5.5 (`claude-opus-5-5`)** via the SDK Tool Runner (`client.beta.messages.tool_runner`) with the grounding context under `cache_control: ephemeral`, adaptive thinking on, in `engine/src/ontology_engine/ai/agent.py`; returns a `GroundedAnswer` (`answer_text`, `citations[]`, `proposed_actions[]`, `trace_id`)
-- [ ] T055 [US4] Implement the `propose_action` tool (validates input against the `ActionDef` + owned-target policy, stores a proposal + mock preview; **MUST NOT call the Action port `execute`**) in `engine/src/ontology_engine/ai/propose.py`
-- [ ] T056 [P] [US4] Implement Langfuse tracing adapter behind the engine `trace()` seam in `engine/src/ontology_engine/ai/tracing.py`
-- [ ] T057 [US4] Implement agent endpoints in `apps/api/src/app/routers/agent.py`: `POST /agent/ask` (streamed GroundedAnswer), `POST /agent/proposals/{id}/approve` (routes through the human-approved `/actions/{key}/execute` path)
-- [ ] T058 [P] [US4] Build the agent chat UI in `apps/web/app/agent/` (stream answer + show citations as links to objects; render proposed actions with an explicit approve button)
+- [X] T053 [US4] Implement grounded retrieval tools (`search_objects`, `get_object`, `traverse`, `run_function`) in `engine/src/ontology_engine/ai/tools.py` (side-effect-free; return real object ids)
+- [X] T054 [US4] Implement the agent on **Claude Opus 5.5 (`claude-opus-5-5`)** via the SDK Tool Runner (`client.beta.messages.tool_runner`) with the grounding context under `cache_control: ephemeral`, adaptive thinking on, in `engine/src/ontology_engine/ai/agent.py`; returns a `GroundedAnswer` (`answer_text`, `citations[]`, `proposed_actions[]`, `trace_id`)
+- [X] T055 [US4] Implement the `propose_action` tool (validates input against the `ActionDef` + owned-target policy, stores a proposal + mock preview; **MUST NOT call the Action port `execute`**) in `engine/src/ontology_engine/ai/propose.py`
+- [X] T056 [P] [US4] Implement Langfuse tracing adapter behind the engine `trace()` seam in `engine/src/ontology_engine/ai/tracing.py`
+- [X] T057 [US4] Implement agent endpoints in `apps/api/src/app/routers/agent.py`: `POST /agent/ask` (streamed GroundedAnswer), `POST /agent/proposals/{id}/approve` (routes through the human-approved `/actions/{key}/execute` path)
+- [X] T058 [P] [US4] Build the agent chat UI in `apps/web/app/agent/` (stream answer + show citations as links to objects; render proposed actions with an explicit approve button)
 
 **Checkpoint**: Grounded, traced, propose-only agent; zero autonomous external changes (SC-004).
 
