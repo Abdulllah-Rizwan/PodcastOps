@@ -135,16 +135,16 @@ weakening a matcher rule makes the CI gate fail.
 
 ### Tests for User Story 3 (constitution-mandated: resolution evaluated)
 
-- [ ] T045 [P] [US3] Test the eval harness in `engine/tests/test_resolution_eval.py` (computes correct precision/recall/F1 on a tiny fixture; **detects a deliberately weakened matcher as a regression**)
+- [X] T045 [P] [US3] Test the eval harness in `engine/tests/test_resolution_eval.py` (computes correct precision/recall/F1 on a tiny fixture; **detects a deliberately weakened matcher as a regression**)
 
 ### Implementation for User Story 3
 
-- [ ] T046 [US3] Seed the golden set in `verticals/podcast/evals/golden/` from the slice's 199 real matched pairs **plus curated hard negatives (near-duplicate titles/dates)**; add a `GoldenCase` loader (`kind` match|non_match)
-- [ ] T047 [US3] Implement the similarity `Matcher` (embedding cosine via pgvector `nearest`) in `engine/src/ontology_engine/resolve/similarity.py`, and the `CombinedMatcher` merging baseline+similarity into one `ResolutionDecision` — **baseline MUST remain runnable alone for comparison (Principle III)**
-- [ ] T048 [US3] Implement the ER eval harness (precision/recall/F1, mismatch list, threshold, JSON report; runs hermetic on JsonRepository + LocalEmbeddings) in `engine/src/ontology_engine/evals/resolution.py`
-- [ ] T049 [US3] Add the CI eval gate job to `.github/workflows/ci.yml` (runs T048 hermetically; **fails the build if precision < 95% or recall < 90%** per SC-002/SC-007)
-- [ ] T050 [P] [US3] Implement eval endpoints in `apps/api/src/app/routers/evals.py`: `POST /evals/resolution/run`, `GET /evals/resolution/latest`
-- [ ] T051 [P] [US3] Build the eval dashboard UI in `apps/web/app/evals/` (precision/recall/F1 over time; list of mismatched cases)
+- [X] T046 [US3] Seed the golden set in `verticals/podcast/evals/golden/` from the slice's 199 real matched pairs **plus curated hard negatives (near-duplicate titles/dates)**; add a `GoldenCase` loader (`kind` match|non_match)
+- [X] T047 [US3] Implement the similarity `Matcher` (embedding cosine via pgvector `nearest`) in `engine/src/ontology_engine/resolve/similarity.py`, and the `CombinedMatcher` merging baseline+similarity into one `ResolutionDecision` — **baseline MUST remain runnable alone for comparison (Principle III)**
+- [X] T048 [US3] Implement the ER eval harness (precision/recall/F1, mismatch list, threshold, JSON report; runs hermetic on JsonRepository + LocalEmbeddings) in `engine/src/ontology_engine/evals/resolution.py`
+- [X] T049 [US3] Add the CI eval gate job to `.github/workflows/ci.yml` (runs T048 hermetically; **fails the build if precision < 95% or recall < 90%** per SC-002/SC-007)
+- [X] T050 [P] [US3] Implement eval endpoints in `apps/api/src/app/routers/evals.py`: `POST /evals/resolution/run`, `GET /evals/resolution/latest`
+- [X] T051 [P] [US3] Build the eval dashboard UI in `apps/web/app/evals/` (precision/recall/F1 over time; list of mismatched cases)
 
 **Checkpoint**: Resolution is measurable and regression-gated (SC-002, SC-007).
 

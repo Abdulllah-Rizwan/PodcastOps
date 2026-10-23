@@ -6,6 +6,9 @@ so importing the engine never requires them. The ER eval uses `LocalEmbeddings` 
 
 from __future__ import annotations
 
+import hashlib
+import math
+import re
 from typing import Protocol, runtime_checkable
 
 
@@ -18,6 +21,47 @@ class EmbeddingProvider(Protocol):
 
     def model_id(self) -> str:
         ...
+
+
+_TOKEN = re.compile(r"[a-z0-9]+")
+
+
+class HashingEmbeddings:
+    """Deterministic, dependency-free embeddings via word + char-trigram feature hashing.
+
+    Not semantic — it captures lexical overlap — but it is pure Python, needs no model download or
+    network, and is fully reproducible, which makes it the right choice for the **hermetic** ER eval
+    and its CI gate. Production uses `VoyageEmbeddings` (or `LocalEmbeddings`) for real semantics.
+    """
+
+    def __init__(self, *, dim: int = 256) -> None:
+        self._dim = dim
+
+    def _features(self, text: str) -> list[str]:
+        tokens = _TOKEN.findall(text.lower())
+        feats = list(tokens)
+        joined = " ".join(tokens)
+        for i in range(len(joined) - 2):  # char trigrams for sub-word overlap
+            feats.append(f"#{joined[i : i + 3]}")
+        return feats
+
+    def _embed_one(self, text: str) -> list[float]:
+        vec = [0.0] * self._dim
+        for feat in self._features(text):
+            h = int(hashlib.md5(feat.encode("utf-8")).hexdigest(), 16)
+            idx = h % self._dim
+            sign = 1.0 if (h >> 8) & 1 else -1.0  # signed hashing reduces collisions
+            vec[idx] += sign
+        norm = math.sqrt(sum(v * v for v in vec))
+        if norm > 0.0:
+            vec = [v / norm for v in vec]
+        return vec
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        return [self._embed_one(t) for t in texts]
+
+    def model_id(self) -> str:
+        return f"hashing:char3-{self._dim}"
 
 
 class VoyageEmbeddings:
@@ -74,9 +118,13 @@ def get_provider(
     voyage_model: str = "voyage-3",
     local_model: str = "all-MiniLM-L6-v2",
 ) -> EmbeddingProvider:
-    """Factory: choose the provider by config string ("voyage" | "local")."""
+    """Factory: choose the provider by config string ("voyage" | "local" | "hashing")."""
     if kind == "voyage":
         return VoyageEmbeddings(api_key=voyage_api_key or "", model=voyage_model)
     if kind == "local":
         return LocalEmbeddings(model=local_model)
-    raise ValueError(f"unknown embedding provider {kind!r} (expected 'voyage' or 'local')")
+    if kind == "hashing":
+        return HashingEmbeddings()
+    raise ValueError(
+        f"unknown embedding provider {kind!r} (expected 'voyage', 'local', or 'hashing')"
+    )

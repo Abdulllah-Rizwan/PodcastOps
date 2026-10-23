@@ -63,6 +63,8 @@ class AppContext:
     jobs: JobStore
     # Vertical-supplied action handlers, keyed by action key (the real writeback behavior).
     action_handlers: "dict[str, ActionHandler]" = field(default_factory=dict)
+    # Latest ER eval result per matcher kind (populated by the evals endpoints).
+    evals: dict[str, object] = field(default_factory=dict)
 
 
 def get_ctx(request: Request) -> AppContext:

@@ -27,6 +27,38 @@ followed the plan, it does **not** belong here (put status in `progress.md` inst
 
 ## Log
 
+## 2026-10-23 — Hermetic ER eval: deterministic `HashingEmbeddings` + a real golden set with curated hard negatives (US3)
+
+- **Decision**: make the entity-resolution eval and its CI gate fully hermetic by (a) adding a
+  deterministic, dependency-free `HashingEmbeddings` provider (word + char-trigram signed feature
+  hashing, L2-normalized) used by the similarity/combined matchers in eval + CI, and (b) seeding the
+  golden set from the **199 real matched pairs** of the 2026-10-21 live run plus **116 curated hard
+  negatives** (each a YouTube record paired with a *different* episode's Apple record whose title is
+  similar but whose release date is far apart).
+- **Why**:
+  - The plan says the eval runs on `LocalEmbeddings`, but `sentence-transformers` pulls a ~90 MB
+    model over the network on first use — neither hermetic nor fast nor reproducible in CI. The eval
+    must gate every change (Principle VI), so it has to run offline and deterministically.
+    `HashingEmbeddings` is lexical, not semantic, but it is pure Python and reproducible; `Voyage`/
+    `Local` remain the production providers for real semantics. The eval harness is matcher-agnostic,
+    so swapping in a real provider later needs no harness change.
+  - Hard negatives must be *separable by the multi-signal baseline* yet *fool a naive title-only
+    matcher*: title-similar + date-far pairs score low on the baseline (date signal → 0) but high on
+    title alone. On the committed set the baseline scores **P = 1.000 / R = 1.000** (315 cases), so
+    the gate (precision ≥ 95%, recall ≥ 90%) passes, and widening the date tolerance / lowering the
+    threshold / dropping a signal reintroduces false positives → the gate fails.
+  - The real data has no title-identical, date-far different episodes (those would be false positives
+    for the baseline by construction), so the "detect a weakened matcher as a regression" assertion
+    (T045) lives in a **tiny controlled fixture** inside the test, not the real golden set, which is
+    reserved for the CI gate (T049).
+- **Impact**: `HashingEmbeddings` + `get_provider("hashing")`; `resolve/similarity.py`
+  (`SimilarityMatcher`, `CombinedMatcher` — baseline stays runnable alone per Principle III);
+  `evals/golden.py` (`GoldenCase` loader), `evals/resolution.py` (harness + gate),
+  `evals/run_gate.py` (CI entry); `verticals/podcast/evals/golden/cases.jsonl` (315 cases, public
+  podcast metadata only — no secrets); CI `eval-gate` job; `/evals/resolution/*` API + `app/evals` UI.
+- **Links**: constitution Principle III/VI, SC-002/SC-007; `.github/workflows/ci.yml`;
+  `engine/tests/test_resolution_eval.py`; `verticals/podcast/tests/test_golden_gate.py`.
+
 ## 2026-10-23 — Keep the slice (`src/podcast_ops/`) alongside the new engine during M0
 
 - **Original plan**: `plan.md` (Structure Decision) says "the existing `src/podcast_ops/` is

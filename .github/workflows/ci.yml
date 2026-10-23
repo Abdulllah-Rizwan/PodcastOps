@@ -39,5 +39,21 @@ jobs:
       - name: API tests
         run: pytest apps/api/tests
 
-  # eval-gate: added in T049 (entity-resolution precision/recall gate, hermetic).
+  eval-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install packages
+        run: |
+          pip install ./engine
+          pip install ./verticals/podcast
+      - name: Entity-resolution eval gate (baseline, hermetic)
+        # Fails the build if precision < 95% or recall < 90% on the golden set (SC-002/SC-007).
+        run: python -m ontology_engine.evals.run_gate verticals/podcast/evals/golden baseline
+      - name: Entity-resolution eval (combined, reported)
+        run: python -m ontology_engine.evals.run_gate verticals/podcast/evals/golden combined
+
   # build-and-deploy: added in T060-T061 (image build+push, Cloud Run deploy; Vercel auto-deploys web).

@@ -17,11 +17,11 @@ whenever a meaningful step completes.
 
 - **Phase**: 🚀 **PIVOTED — building the ontology engine** (2026-10-23). The original narrow validation slice is **complete and proven** (2026-10-21, commit `bcc5502`); the project has been deliberately redefined into a reusable, **AI-native ontology engine proven by verticals** (constitution MAJOR bump **1.1.0 → 2.0.0**). Podcast ops = **vertical #1** (the live demo). See `decisions.md` (2026-10-23).
 - **Active feature**: `specs/002-ontology-engine` — the full-stack engine. Its **full Spec Kit cycle is complete**: `spec.md` + requirements checklist (`/speckit-specify`), `plan.md` + `research.md` + `data-model.md` + `contracts/` + `quickstart.md` (`/speckit-plan`), and `tasks.md` with **66 tasks** (`/speckit-tasks`). `specs/001-podcast-ops-slice` remains the *completed* slice.
-- **Current milestone**: **M0 skeleton + US1 (fused ontology) + US2 (decide → approve → act) built** (Phases 1–4 of `002`, tasks T001–T044 done). On top of US1, US2 adds the read-only function-execution service (functions get a `ReadOnlyStore` only — read-only by the handle, not convention) + the `apple_without_youtube` decision rule; the safe Action port (`preview`→mock logs intent + no external call; `execute`→real, refuses unless `approved=true` **and** write-access confirmed, computes an idempotency key, returns `skipped_idempotent` on repeat, persists **every** attempt via an `AuditTrail`) + the `youtube_update_show_notes` writeback (owned-test-channel-only, idempotent on marker, injected transport); the functions/actions API (`GET /functions`, `POST /functions/{key}/run`, `GET /actions`, `POST /actions/{key}/preview`, `POST /actions/{key}/execute`, `GET /actions/attempts`); and the ops dashboard UI (flagged episodes → mock preview → approve + execute → audit timeline). **32 tests pass (incl. decision read-only + full action-seam contract + actions API), ruff + black clean.** The old slice's M0–M3 are satisfied and folded in; its proven Python core seeds the engine.
+- **Current milestone**: **M0 + US1 (fused ontology) + US2 (decide → approve → act) + US3 (resolution, measured) built** (Phases 1–5 of `002`, tasks T001–T051 done). US3 adds the similarity (`HashingEmbeddings` cosine) + combined matchers (baseline stays runnable alone, Principle III), the ER eval harness (precision/recall/F1 + mismatch list + JSON report) over a golden set of **199 real matched pairs + 116 curated hard negatives**, a **hermetic CI gate** (`eval-gate` job fails the build if precision < 95% or recall < 90%), and the `/evals/resolution/*` API + eval-dashboard UI. **Baseline scores P = R = 1.000 on the 315-case golden set; 41 tests pass; ruff + black clean.** On top of US1, US2 adds the read-only function-execution service (functions get a `ReadOnlyStore` only — read-only by the handle, not convention) + the `apple_without_youtube` decision rule; the safe Action port (`preview`→mock logs intent + no external call; `execute`→real, refuses unless `approved=true` **and** write-access confirmed, computes an idempotency key, returns `skipped_idempotent` on repeat, persists **every** attempt via an `AuditTrail`) + the `youtube_update_show_notes` writeback (owned-test-channel-only, idempotent on marker, injected transport); the functions/actions API (`GET /functions`, `POST /functions/{key}/run`, `GET /actions`, `POST /actions/{key}/preview`, `POST /actions/{key}/execute`, `GET /actions/attempts`); and the ops dashboard UI (flagged episodes → mock preview → approve + execute → audit timeline). **32 tests pass (incl. decision read-only + full action-seam contract + actions API), ruff + black clean.** The old slice's M0–M3 are satisfied and folded in; its proven Python core seeds the engine.
 - **Decided direction**: engine-is-the-product; generality *earned* by a second vertical (M5), never asserted. Full-stack: web UI (ontology explorer + ops dashboard + AI agent), FastAPI backend over the existing Python core, Postgres + **pgvector**, background worker, AI layer grounded in the ontology, eval + observability harness, cloud (default: GCP Cloud Run + Vercel).
 - **Carried forward from the slice**: proven YouTube + Apple read, honest entity resolution (`Episode` fusion), the decision-rule pattern, and the safe/mock-first/idempotent/audited writeback seam. The **199 real matched pairs** from the live run seed the entity-resolution golden eval set.
 - **Committed & pushed**: slice at commit `bcc5502` on `main` → `github.com/Abdulllah-Rizwan/PodcastOps`. The pivot checkpoint — governance docs (constitution v2.0.0, CLAUDE.md, decisions.md, this file) **plus** the complete `specs/002-ontology-engine/` planning cycle (spec + plan + tasks) — is **committed and pushed to `main`** as of 2026-10-23. No secrets committed (`.env`, `secrets/`, `run/` gitignored).
-- **Next action**: continue `/speckit-implement` at **Phase 5 (US3 — entity resolution, measured)**: seed the labeled golden set from the slice's 199 real matched pairs (+ hard negatives), the embeddings-backed matcher, and the precision/recall eval harness + hermetic CI gate (T045–T051). **44/66 tasks done (T001–T044)**; 22 remain. The US1 explorer + US2 ops UIs are coded but not yet run against a live ingest (that's the deployed end-to-end check, T062–T063 in Phase 7).
+- **Next action**: continue `/speckit-implement` at **Phase 6 (US4 — grounded AI agent, propose-only)**: grounded retrieval over the ontology (objects + links + embeddings), an agent that answers and *proposes* validated, human-approved actions, and AI evals + tracing (T052–T058). **51/66 tasks done (T001–T051)**; 15 remain. The US1 explorer + US2 ops + US3 eval UIs are coded but not yet run against a live ingest (that's the deployed end-to-end check, T062–T063 in Phase 7).
 - **Note on the slice**: the proven `src/podcast_ops/` is deliberately **kept alongside** the new `engine/` + `verticals/podcast/` packages (migrate-by-copy-and-generalize), so vertical #1 stays runnable end-to-end (Principle I) until the engine reaches parity in US1–US3; `src/` is retired then.
 - **Blockers**: None.
 - **Live run config (from the slice, still valid for vertical #1)**: Huberman Lab — `TARGET_YOUTUBE_SOURCE=UC2D2CMWXMOVWx7giW1n3LIg`, `TARGET_APPLE_SHOW=1545953110`, write target `TEST_VIDEO_ID=CfRIjrzeGrU`.
@@ -32,7 +32,7 @@ whenever a meaningful step completes.
 |-----------|-------------|--------|
 | M0 | Full-stack skeleton: API over existing core, Postgres, minimal UI, deployed thin (no AI yet) | 🏗️ Skeleton built (Phases 1–2, T001–T026); deploy-thin at Phase 7 |
 | M1 | Generalized ontology core: declarative object/link/function/action registries; podcast as a vertical plugin | ✅ Done — object/link/source registries + resolution pipeline (US1, T027–T036) and function/action registries + safe-action port (US2, T037–T044); podcast is a plugin via `Vertical`/`OntologyRegistry` |
-| M2 | Entity resolution upgraded (embeddings + vector store) + precision/recall evals vs golden set | ⬜ |
+| M2 | Entity resolution upgraded (embeddings + vector store) + precision/recall evals vs golden set | ✅ Done (eval side) — similarity + combined matchers, golden set (199 real pairs + 116 hard negatives), precision/recall/F1 harness + hermetic CI gate (US3, T045–T051). Baseline P=R=1.000. Live pgvector-backed similarity ingest is wired but exercised only hermetically until Phase 7 deploy (T062–T063) |
 | M3 | AI agent over the ontology: grounded retrieval + answers; proposes validated, audited, human-approved actions; AI evals + tracing | ⬜ |
 | M4 | Harden & deploy for real: CI/CD eval gate, observability, secrets, autoscale; UI complete | ⬜ |
 | M5 | Vertical #2: a second domain on the same engine, no engine rewrite — the generality proof | ⬜ |
@@ -43,7 +43,31 @@ whenever a meaningful step completes.
 
 ## History (newest first)
 
-### 2026-10-23 (latest) — US2 implemented: decide → approve → act, safely (`002` Phase 4, T037–T044)
+### 2026-10-23 (latest) — US3 implemented: entity resolution, measured + CI-gated (`002` Phase 5, T045–T051)
+
+- Ran `/speckit-implement` for Phase 5 (US3), constitution-mandated eval test first (T045).
+- **Matchers** (T047, `resolve/similarity.py`): `SimilarityMatcher` (embedding cosine) + `CombinedMatcher`
+  (weighted blend, both signal sets kept for inspectability). The deterministic `BaselineMatcher`
+  stays runnable **alone** so upgrades are measured against it (Principle III). Added a pure-Python
+  `HashingEmbeddings` provider so the similarity path is hermetic (no model download / network).
+- **Golden set** (T046, `evals/golden.py` + `verticals/podcast/evals/golden/cases.jsonl`): seeded from
+  the 2026-10-21 live run's **199 real matched pairs** + **116 curated hard negatives** (title-similar
+  but date-far — separable by the multi-signal baseline, but a title-only matcher is fooled). Public
+  podcast metadata only; no secrets. `GoldenCase` loader with `kind` match|non_match.
+- **Eval harness** (T048, `evals/resolution.py`): precision/recall/F1, mismatch list, threshold, JSON
+  report; matcher-agnostic; fully hermetic on `JsonRepository`/in-memory cases.
+- **CI gate** (T049, `evals/run_gate.py` + `.github/workflows/ci.yml` `eval-gate` job): runs the eval
+  and **fails the build if precision < 95% or recall < 90%** (SC-002/SC-007). Baseline: **P=1.000
+  R=1.000 F1=1.000** on 315 cases; combined P=1.000 R=0.990. A weakened matcher trips the gate (shown
+  by T045's tiny fixture: title-only → false positives → precision drop → gate fails).
+- **API** (T050, `routers/evals.py`): `POST /evals/resolution/run?matcher=baseline|combined`,
+  `GET /evals/resolution/latest`; golden path comes from the registered vertical. **UI** (T051,
+  `app/evals/`): precision/recall/F1 tiles, gate badge, mismatched-case table, run button.
+- **41 tests pass** (32 prior + 3 eval harness + 3 golden-gate guard + 3 evals API); ruff + black clean.
+  **M2 done (eval side).** Rationale (hermetic embeddings + golden construction) logged in `decisions.md`.
+  Next: Phase 6 (US4 — grounded AI agent, propose-only).
+
+### 2026-10-23 (earlier · US2) — US2 implemented: decide → approve → act, safely (`002` Phase 4, T037–T044)
 
 - Ran `/speckit-implement` for Phase 4 (US2), constitution-mandated tests first (T037 decision, T038 action seam).
 - **Logic (read-only)**: `functions/registry.py` (T039) runs a registered `FunctionDef` with
@@ -70,7 +94,7 @@ whenever a meaningful step completes.
   `episode` ObjectType and the matcher expect `duration_s` — so the duration signal/property is inert
   until the mapping key is aligned. Title + date still carry the match. Fix when wiring the live ingest.
 
-### 2026-10-23 (earlier) — US1 implemented: see the fused ontology (`002` Phase 3, T027–T036)
+### 2026-10-23 (earlier · US1) — US1 implemented: see the fused ontology (`002` Phase 3, T027–T036)
 
 - Ran `/speckit-implement` for Phase 3 (US1 — the 🎯 MVP), tests-first per the constitution.
 - **Resolution core (engine)**: `BaselineMatcher` (T029) — normalized-title + date + duration

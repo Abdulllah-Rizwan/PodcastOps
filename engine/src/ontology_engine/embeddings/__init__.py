@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from ontology_engine.embeddings.provider import (
     EmbeddingProvider,
+    HashingEmbeddings,
     LocalEmbeddings,
     VoyageEmbeddings,
     get_provider,
@@ -16,6 +17,7 @@ from ontology_engine.embeddings.record import EmbeddingRecord
 
 __all__ = [
     "EmbeddingProvider",
+    "HashingEmbeddings",
     "LocalEmbeddings",
     "VoyageEmbeddings",
     "get_provider",

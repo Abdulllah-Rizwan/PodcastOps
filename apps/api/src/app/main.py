@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 
-from app.routers import actions, ingest, ontology
+from app.routers import actions, evals, ingest, ontology
 from app.state import AppContext, JobStore, get_ctx
 from ontology_engine.config import Settings
 from ontology_engine.ontology.registry import OntologyRegistry
@@ -75,6 +75,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(ingest.router)
     app.include_router(ontology.router)
     app.include_router(actions.router)
+    app.include_router(evals.router)
 
     logger.info(
         "registered verticals=%s object_types=%s sources=%s storage=%s",
