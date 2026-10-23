@@ -109,17 +109,17 @@ writeback succeeds once; retry is `skipped_idempotent`; all attempts (mock + rea
 
 ### Tests for User Story 2 (constitution-mandated: functions + mock action seam)
 
-- [ ] T037 [P] [US2] Unit test the decision function in `verticals/podcast/tests/test_decision.py` (correct flagging; **asserts it receives a read-only view and performs no writes**) (migrate slice `tests/unit/test_decision.py`)
-- [ ] T038 [P] [US2] Test the action seam in `engine/tests/test_action_seam.py` (**mock mode makes no external call and logs intent; real mode requires `approved=true`; repeat with same idempotency key → `skipped_idempotent`; every attempt recorded**)
+- [X] T037 [P] [US2] Unit test the decision function in `verticals/podcast/tests/test_decision.py` (correct flagging; **asserts it receives a read-only view and performs no writes**) (migrate slice `tests/unit/test_decision.py`)
+- [X] T038 [P] [US2] Test the action seam in `engine/tests/test_action_seam.py` (**mock mode makes no external call and logs intent; real mode requires `approved=true`; repeat with same idempotency key → `skipped_idempotent`; every attempt recorded**)
 
 ### Implementation for User Story 2
 
-- [ ] T039 [US2] Implement the `FunctionDef` registry + read-only execution (functions get `ReadOnlyStore` only) in `engine/src/ontology_engine/functions/registry.py`
-- [ ] T040 [P] [US2] Implement `apple_without_youtube` function in `verticals/podcast/src/vertical_podcast/functions/apple_without_youtube.py` (migrate slice `logic/decision.py`)
-- [ ] T041 [US2] Implement the `ActionDef` + Action port (`preview`→mock ActionAttempt logging intent; `execute`→real, refuses unless `approved` and write-access confirmed; computes idempotency key; `skipped_idempotent` on repeat; persists every `ActionAttempt`) in `engine/src/ontology_engine/actions/port.py` + `audit.py` (migrate slice `action/writeback.py`, `action/audit_log.py`)
-- [ ] T042 [P] [US2] Implement `youtube_update_show_notes` action (append marker via `videos.update`; target = owned test channel only; idempotent on marker) in `verticals/podcast/src/vertical_podcast/actions/update_show_notes.py`
-- [ ] T043 [US2] Implement decision/action endpoints in `apps/api/src/app/routers/actions.py`: `GET /functions`, `POST /functions/{key}/run` (no mutation), `GET /actions`, `POST /actions/{key}/preview` (mock), `POST /actions/{key}/execute` (requires `{approved:true}`), `GET /actions/attempts`
-- [ ] T044 [P] [US2] Build the ops dashboard + action console UI in `apps/web/app/ops/` (flagged episodes; mock/real toggle; approve+execute; audit-log timeline)
+- [X] T039 [US2] Implement the `FunctionDef` registry + read-only execution (functions get `ReadOnlyStore` only) in `engine/src/ontology_engine/functions/registry.py`
+- [X] T040 [P] [US2] Implement `apple_without_youtube` function in `verticals/podcast/src/vertical_podcast/functions/apple_without_youtube.py` (migrate slice `logic/decision.py`)
+- [X] T041 [US2] Implement the `ActionDef` + Action port (`preview`→mock ActionAttempt logging intent; `execute`→real, refuses unless `approved` and write-access confirmed; computes idempotency key; `skipped_idempotent` on repeat; persists every `ActionAttempt`) in `engine/src/ontology_engine/actions/port.py` + `audit.py` (migrate slice `action/writeback.py`, `action/audit_log.py`)
+- [X] T042 [P] [US2] Implement `youtube_update_show_notes` action (append marker via `videos.update`; target = owned test channel only; idempotent on marker) in `verticals/podcast/src/vertical_podcast/actions/update_show_notes.py`
+- [X] T043 [US2] Implement decision/action endpoints in `apps/api/src/app/routers/actions.py`: `GET /functions`, `POST /functions/{key}/run` (no mutation), `GET /actions`, `POST /actions/{key}/preview` (mock), `POST /actions/{key}/execute` (requires `{approved:true}`), `GET /actions/attempts`
+- [X] T044 [P] [US2] Build the ops dashboard + action console UI in `apps/web/app/ops/` (flagged episodes; mock/real toggle; approve+execute; audit-log timeline)
 
 **Checkpoint**: US1 + US2 both work; deciding ≠ acting; writeback safe/idempotent/audited (SC-003).
 

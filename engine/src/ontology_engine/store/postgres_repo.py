@@ -171,7 +171,10 @@ class PostgresRepository:  # pragma: no cover - live transport
     def find_attempt(self, idempotency_key: str) -> ActionAttempt | None:
         m = self._models
         with self._Session() as s:
-            row = s.query(m.Attempt).filter_by(idempotency_key=idempotency_key, mode="real").first()
+            q = s.query(m.Attempt).filter_by(idempotency_key=idempotency_key, mode="real")
+            # Prefer a settled (success/skipped) attempt so a stale failure doesn't block a retry.
+            settled = q.filter(m.Attempt.status.in_(("success", "skipped_idempotent"))).first()
+            row = settled or q.first()
             return ActionAttempt.model_validate(row.data) if row else None
 
     def nearest(

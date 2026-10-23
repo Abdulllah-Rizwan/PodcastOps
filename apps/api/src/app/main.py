@@ -14,11 +14,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 
-from app.routers import ingest, ontology
+from app.routers import actions, ingest, ontology
 from app.state import AppContext, JobStore, get_ctx
 from ontology_engine.config import Settings
 from ontology_engine.ontology.registry import OntologyRegistry
 from ontology_engine.store.factory import build_repository
+from vertical_podcast.registry import action_handlers as podcast_action_handlers
 from vertical_podcast.registry import register as register_podcast
 
 logger = logging.getLogger("podcast_ops.api")
@@ -31,7 +32,13 @@ def build_context(settings: Settings | None = None) -> AppContext:
     registry = OntologyRegistry()
     register_podcast(registry, settings)
     repo = build_repository(settings)
-    return AppContext(settings=settings, registry=registry, repo=repo, jobs=JobStore())
+    return AppContext(
+        settings=settings,
+        registry=registry,
+        repo=repo,
+        jobs=JobStore(),
+        action_handlers=podcast_action_handlers(settings),
+    )
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -67,6 +74,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(ingest.router)
     app.include_router(ontology.router)
+    app.include_router(actions.router)
 
     logger.info(
         "registered verticals=%s object_types=%s sources=%s storage=%s",

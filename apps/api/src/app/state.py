@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 from uuid import uuid4
 
 from fastapi import Request
@@ -17,6 +17,9 @@ from fastapi import Request
 from ontology_engine.config import Settings
 from ontology_engine.ontology.registry import OntologyRegistry
 from ontology_engine.store.repository import Repository
+
+if TYPE_CHECKING:
+    from ontology_engine.actions.port import ActionHandler
 
 JobStatus = Literal["queued", "running", "completed", "failed"]
 
@@ -58,6 +61,8 @@ class AppContext:
     registry: OntologyRegistry
     repo: Repository
     jobs: JobStore
+    # Vertical-supplied action handlers, keyed by action key (the real writeback behavior).
+    action_handlers: "dict[str, ActionHandler]" = field(default_factory=dict)
 
 
 def get_ctx(request: Request) -> AppContext:

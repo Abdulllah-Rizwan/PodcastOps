@@ -38,4 +38,6 @@ class FunctionDef(BaseModel):
     description: str = ""
     # Which object types the function reads (for documentation / UI).
     input_types: list[str] = Field(default_factory=list)
-    run: FunctionRunner
+    # Typed as FunctionRunner for callers; annotated loosely here so pydantic need not resolve the
+    # TYPE_CHECKING-only `ReadOnlyStore` forward ref in the Callable signature.
+    run: Callable[..., list[Decision]]

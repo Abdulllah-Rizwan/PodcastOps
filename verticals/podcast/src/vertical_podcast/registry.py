@@ -11,10 +11,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from ontology_engine.ontology.registry import OntologyRegistry, Vertical
+from vertical_podcast.actions.update_show_notes import UPDATE_SHOW_NOTES, build_handler
+from vertical_podcast.functions.apple_without_youtube import APPLE_WITHOUT_YOUTUBE
 from vertical_podcast.objects import LINK_TYPES, OBJECT_TYPES
 from vertical_podcast.sources import AppleAdapter, YouTubeAdapter
 
 if TYPE_CHECKING:
+    from ontology_engine.actions.port import ActionHandler
     from ontology_engine.config import Settings
 
 VERTICAL_KEY = "podcast"
@@ -42,8 +45,8 @@ def build_vertical(settings: "Settings | None" = None) -> Vertical:
         object_types=list(OBJECT_TYPES),
         link_types=list(LINK_TYPES),
         source_adapters=[youtube, apple],
-        function_defs=[],  # apple_without_youtube — added in the US2 phase
-        action_defs=[],  # youtube_update_show_notes — added in the US2 phase
+        function_defs=[APPLE_WITHOUT_YOUTUBE],
+        action_defs=[UPDATE_SHOW_NOTES],
         ui_config={
             "primary_object_type": "episode",
             "views": ["explorer", "ops", "evals", "agent"],
@@ -65,3 +68,8 @@ def source_targets(settings: "Settings") -> dict[str, object]:
         "youtube": settings.target_youtube_source,
         "apple": settings.target_apple_show,
     }
+
+
+def action_handlers(settings: "Settings | None" = None) -> dict[str, "ActionHandler"]:
+    """The vertical's ActionHandler per action key (binds live transport when credentials exist)."""
+    return {UPDATE_SHOW_NOTES.key: build_handler(settings)}

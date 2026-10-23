@@ -165,10 +165,14 @@ class JsonRepository:
         return out
 
     def find_attempt(self, idempotency_key: str) -> ActionAttempt | None:
-        for attempt in self._attempts:
-            if attempt.idempotency_key == idempotency_key and attempt.mode == "real":
-                return attempt
-        return None
+        # Prefer a settled (success/skipped) real attempt so a stale failure doesn't block a retry.
+        matches = [
+            a for a in self._attempts if a.idempotency_key == idempotency_key and a.mode == "real"
+        ]
+        for a in matches:
+            if a.status in ("success", "skipped_idempotent"):
+                return a
+        return matches[-1] if matches else None
 
     def nearest(
         self, object_type_key: str, vector: list[float], k: int = 5
