@@ -15,6 +15,28 @@ whenever a meaningful step completes.
 
 ## Current Status
 
+> ### ⏸️ STOPPED FOR THE DAY — 2026-10-23 (end of day). START HERE TOMORROW (2026-10-24):
+> **Where we are:** US1–US4 are built, committed, and pushed to `main` (HEAD `92f6207`). **58/66 tasks done**, M0–M3 complete, **50 tests pass hermetically, ruff + black clean**. Working tree is **clean** (nothing uncommitted).
+>
+> **Resume at Phase 7 (Polish & Cross-Cutting), T059–T066** — run `/speckit-implement` scoped to Phase 7. Two groups:
+> 1. **Can do now (no credentials), do these first:**
+>    - **T059** — engine/vertical seam-guard test (`engine/tests/test_engine_vertical_seam.py`): assert no `engine/` module imports `verticals/` (SC-005). Pure/hermetic.
+>    - **T060** — author deploy config in `infra/deploy/` (Cloud Run API, Cloud Run Job + Scheduler for ingest, Neon/Cloud SQL + pgvector, Vercel for `apps/web`, GCP Secret Manager). Config files only.
+>    - **T061** — add build+push image + deploy-to-Cloud-Run jobs to `.github/workflows/` (gated behind lint + test + the `eval-gate`); confirm Vercel auto-deploy.
+>    - **T064** — `README.md` (engine vs vertical, run/deploy, the data→logic→action→AI story) + architecture diagram.
+>    - **T066** — security pass (no secrets committed, owned-target-only, agent can't execute un-approved actions). Mostly a review + assertions.
+> 2. **Needs YOUR accounts/keys — pause and ask the user before starting:**
+>    - **T062** — live `GET /access/check` against the real show → expect 3/3 (needs `YOUTUBE_API_KEY`, `YOUTUBE_OAUTH_TOKEN`, show config).
+>    - **T063** — deploy + run `quickstart.md` Scenarios 1–4 end-to-end on Huberman Lab (needs GCP/Vercel + `ANTHROPIC_API_KEY` for the agent). This is the SC-006 live spine + the first real run of all four UIs.
+>    - **T065** — final progress/decisions update once M4 is actually deployed.
+>
+> **Recommended order tomorrow:** T059 → T064 → T066 → T060 → T061 (all local), then stop and confirm credentials/accounts with the user before T062/T063/T065.
+>
+> **Verify the baseline before starting (should be green):**
+> `PYTHONPATH="engine/src;verticals/podcast/src;apps/api/src" python -m pytest engine/tests verticals/podcast/tests apps/api/tests` → **50 passed**. (Bare `pytest` under-collects; name the three roots — see the known test-discovery note below.)
+>
+> **Known follow-ups to fold in opportunistically (already logged):** adapters emit `duration_seconds` but the episode type/matcher expect `duration_s` (duration signal inert — fix when wiring live ingest in T062/T063); `traverse` returns no neighbors until `LinkInstance`s are materialized; `/agent/ask` is JSON not SSE streaming; add `testpaths` to `pyproject`/`pytest.ini` so bare `pytest` collects all 3 roots.
+
 - **Phase**: 🚀 **PIVOTED — building the ontology engine** (2026-10-23). The original narrow validation slice is **complete and proven** (2026-10-21, commit `bcc5502`); the project has been deliberately redefined into a reusable, **AI-native ontology engine proven by verticals** (constitution MAJOR bump **1.1.0 → 2.0.0**). Podcast ops = **vertical #1** (the live demo). See `decisions.md` (2026-10-23).
 - **Active feature**: `specs/002-ontology-engine` — the full-stack engine. Its **full Spec Kit cycle is complete**: `spec.md` + requirements checklist (`/speckit-specify`), `plan.md` + `research.md` + `data-model.md` + `contracts/` + `quickstart.md` (`/speckit-plan`), and `tasks.md` with **66 tasks** (`/speckit-tasks`). `specs/001-podcast-ops-slice` remains the *completed* slice.
 - **Current milestone**: **M0 + US1 (fused ontology) + US2 (decide → approve → act) + US3 (resolution, measured) + US4 (grounded, propose-only agent) built** (Phases 1–6 of `002`, tasks T001–T058 done). US4 adds the AI layer: side-effect-free grounded retrieval tools (`search_objects`/`get_object`/`traverse`/`run_function`), the agent on Claude Opus 5.5 via the SDK Tool Runner (grounding context under `cache_control: ephemeral`, adaptive thinking) returning a `GroundedAnswer` (answer + citations to real object ids + proposed actions + `trace_id`), the `propose_action` tool (validates against the ActionDef + owned-target policy, mock-previews, and **never** executes), a Langfuse tracing seam (no-op default), the `/agent/ask` + `/agent/proposals/{id}/approve` endpoints (approve routes through the human-approved execute path), and the agent chat UI. The `anthropic` SDK is lazy-imported so the engine imports without it, and `/agent/ask` returns 503 when no API key is set — so **50 tests pass hermetically; ruff + black clean**. US3 adds the similarity (`HashingEmbeddings` cosine) + combined matchers (baseline stays runnable alone, Principle III), the ER eval harness (precision/recall/F1 + mismatch list + JSON report) over a golden set of **199 real matched pairs + 116 curated hard negatives**, a **hermetic CI gate** (`eval-gate` job fails the build if precision < 95% or recall < 90%), and the `/evals/resolution/*` API + eval-dashboard UI. **Baseline scores P = R = 1.000 on the 315-case golden set; 41 tests pass; ruff + black clean.** On top of US1, US2 adds the read-only function-execution service (functions get a `ReadOnlyStore` only — read-only by the handle, not convention) + the `apple_without_youtube` decision rule; the safe Action port (`preview`→mock logs intent + no external call; `execute`→real, refuses unless `approved=true` **and** write-access confirmed, computes an idempotency key, returns `skipped_idempotent` on repeat, persists **every** attempt via an `AuditTrail`) + the `youtube_update_show_notes` writeback (owned-test-channel-only, idempotent on marker, injected transport); the functions/actions API (`GET /functions`, `POST /functions/{key}/run`, `GET /actions`, `POST /actions/{key}/preview`, `POST /actions/{key}/execute`, `GET /actions/attempts`); and the ops dashboard UI (flagged episodes → mock preview → approve + execute → audit timeline). **32 tests pass (incl. decision read-only + full action-seam contract + actions API), ruff + black clean.** The old slice's M0–M3 are satisfied and folded in; its proven Python core seeds the engine.
@@ -43,7 +65,18 @@ whenever a meaningful step completes.
 
 ## History (newest first)
 
-### 2026-10-23 (latest) — US4 implemented: grounded, propose-only AI agent (`002` Phase 6, T052–T058)
+### 2026-10-23 (end of day) — STOP for the day; US1–US4 done and pushed
+
+- Stopped development for 2026-10-23. State: **58/66 tasks (T001–T058)**, milestones **M0–M3 complete**,
+  US1–US4 all built, committed, and pushed to `main` (HEAD `92f6207`). Working tree clean.
+- Latest four commits on `main`: `92f6207` US4, `334eda7` US3, `1ec77bb` US2, `01a7406` US1.
+- **50 tests pass hermetically; ruff + black clean; engine imports without optional deps
+  (anthropic / voyageai / sqlalchemy / sentence-transformers).** No live external calls in the suite.
+- **Tomorrow (2026-10-24): resume at Phase 7 (T059–T066)** — see the "START HERE TOMORROW" block at the
+  top of Current Status for the exact order (local tasks T059/T064/T066/T060/T061 first, then confirm
+  credentials with the user before the live/deploy tasks T062/T063/T065).
+
+### 2026-10-23 (US4) — US4 implemented: grounded, propose-only AI agent (`002` Phase 6, T052–T058)
 
 - Ran `/speckit-implement` for Phase 6 (US4), AI-eval test first (T052).
 - **Grounded tools** (T053, `ai/tools.py`): `search_objects`, `get_object`, `traverse`, `run_function`
