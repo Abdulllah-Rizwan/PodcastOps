@@ -27,6 +27,30 @@ followed the plan, it does **not** belong here (put status in `progress.md` inst
 
 ## Log
 
+## 2026-10-23 — Keep the slice (`src/podcast_ops/`) alongside the new engine during M0
+
+- **Original plan**: `plan.md` (Structure Decision) says "the existing `src/podcast_ops/` is
+  **migrated**: its generic pieces become the `engine/` package; its podcast-specific pieces become
+  the `verticals/podcast/` plugin" — implying the old `src/` is moved/removed.
+- **Decision taken instead**: For the M0 skeleton (Phases 1–2), **copy-and-generalize** the proven
+  slice modules into `engine/` + `verticals/podcast/` while **leaving `src/podcast_ops/` in place**.
+  The old package and its CLI remain runnable. `src/` is retired only once the engine reaches
+  end-to-end parity for vertical #1 (through US1–US3), at which point the duplicate is deleted.
+- **Why the original was abandoned**: Constitution Principle I requires vertical #1 to "remain
+  working end-to-end at all times." The new engine cannot yet run end-to-end (no ingest pipeline,
+  functions, or action port until US1–US2), so deleting `src/` during M0 would break the working
+  spine with nothing to replace it. "A working spine always wins over a half-finished layer."
+- **Impact**:
+  - **Scope/constitution**: none widened; this is strictly *safer* and honors Principle I. The
+    engine/vertical seam is still clean (no engine module imports a vertical; verified by a smoke
+    test and formalized later by T059).
+  - **Cost**: temporary code duplication between `src/podcast_ops/` and the new packages until the
+    retirement step. Accepted as the price of never breaking the spine.
+  - **Follow-up**: delete `src/podcast_ops/` (and fold its CLI into the new stack or drop it) when
+    US1–US3 land; note that retirement in `progress.md` and here.
+- **Links**: `plan.md` Structure Decision; `engine/`, `verticals/podcast/` (new); `src/podcast_ops/`
+  (retained); `002` tasks T001–T026 (M0 skeleton); Principle I.
+
 ## 2026-10-23 — Pivot: narrow validation slice → reusable AI-native ontology engine
 
 - **Original plan**: A deliberately **narrow, throwaway validation slice** whose only goal was to

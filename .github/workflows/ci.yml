@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install lint tools
+        run: pip install "ruff>=0.5" "black>=24"
+      - name: Ruff
+        run: ruff check engine verticals apps/api
+      - name: Black (check)
+        run: black --check engine verticals apps/api
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install packages
+        run: |
+          pip install ./engine[dev,embeddings-local]
+          pip install ./verticals/podcast[dev]
+          pip install ./apps/api[dev]
+      - name: Engine tests
+        run: pytest engine/tests
+      - name: Vertical tests
+        run: pytest verticals/podcast/tests
+      - name: API tests
+        run: pytest apps/api/tests
+
+  # eval-gate: added in T049 (entity-resolution precision/recall gate, hermetic).
+  # build-and-deploy: added in T060-T061 (image build+push, Cloud Run deploy; Vercel auto-deploys web).

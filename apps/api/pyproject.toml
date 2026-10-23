@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "podcast-ops-api"
+version = "0.1.0"
+description = "Thin FastAPI layer over the ontology engine with the podcast vertical registered."
+requires-python = ">=3.11"
+dependencies = [
+    "ontology-engine",
+    "vertical-podcast",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "pydantic>=2",
+]
+
+[project.optional-dependencies]
+# Background ingestion worker (local/dev). Cloud uses a Cloud Run Job on the same callable.
+worker = [
+    "arq>=0.25",
+    "redis>=5",
+]
+dev = [
+    "pytest>=7",
+    "httpx>=0.27",
+    "ruff>=0.5",
+    "black>=24",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "../../engine/src", "../../verticals/podcast/src"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.black]
+line-length = 100

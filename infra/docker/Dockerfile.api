@@ -1,0 +1,22 @@
+# Base image for the FastAPI backend (Cloud Run target).
+# Build from the repo root so the engine + vertical packages are in context:
+#   docker build -f infra/docker/Dockerfile.api -t podcast-ops-api .
+FROM python:3.11-slim AS base
+
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /app
+
+# Install the three Python packages (engine, vertical, api) in editable layout.
+COPY engine/ engine/
+COPY verticals/ verticals/
+COPY apps/api/ apps/api/
+
+RUN pip install ./engine[postgres,ai,embeddings-voyage] ./verticals/podcast ./apps/api[worker]
+
+EXPOSE 8000
+
+# Cloud Run provides $PORT; default to 8000 locally.
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --app-dir apps/api/src"]

@@ -17,11 +17,12 @@ whenever a meaningful step completes.
 
 - **Phase**: 🚀 **PIVOTED — building the ontology engine** (2026-10-23). The original narrow validation slice is **complete and proven** (2026-10-21, commit `bcc5502`); the project has been deliberately redefined into a reusable, **AI-native ontology engine proven by verticals** (constitution MAJOR bump **1.1.0 → 2.0.0**). Podcast ops = **vertical #1** (the live demo). See `decisions.md` (2026-10-23).
 - **Active feature**: `specs/002-ontology-engine` — the full-stack engine. Its **full Spec Kit cycle is complete**: `spec.md` + requirements checklist (`/speckit-specify`), `plan.md` + `research.md` + `data-model.md` + `contracts/` + `quickstart.md` (`/speckit-plan`), and `tasks.md` with **66 tasks** (`/speckit-tasks`). `specs/001-podcast-ops-slice` remains the *completed* slice.
-- **Current milestone**: re-baselined (see tracker). **Starting at M0 (full-stack skeleton).** The old slice's M0–M3 are satisfied and folded in; its proven Python core seeds the engine.
+- **Current milestone**: **M0 skeleton built** (Phases 1–2 of `002`, tasks T001–T026 done). The monorepo (`engine/`, `verticals/podcast/`, `apps/api`, `apps/web`, `infra/`), engine core (ontology model, ports, JSON + Postgres repositories, registry, config), the podcast vertical (Show/Episode/Guest/Clip + YouTube/Apple adapters, registered through the engine), and the FastAPI `/health` app all exist; **10 M0 smoke tests pass, ruff + black clean**. The old slice's M0–M3 are satisfied and folded in; its proven Python core seeds the engine.
 - **Decided direction**: engine-is-the-product; generality *earned* by a second vertical (M5), never asserted. Full-stack: web UI (ontology explorer + ops dashboard + AI agent), FastAPI backend over the existing Python core, Postgres + **pgvector**, background worker, AI layer grounded in the ontology, eval + observability harness, cloud (default: GCP Cloud Run + Vercel).
 - **Carried forward from the slice**: proven YouTube + Apple read, honest entity resolution (`Episode` fusion), the decision-rule pattern, and the safe/mock-first/idempotent/audited writeback seam. The **199 real matched pairs** from the live run seed the entity-resolution golden eval set.
 - **Committed & pushed**: slice at commit `bcc5502` on `main` → `github.com/Abdulllah-Rizwan/PodcastOps`. The pivot checkpoint — governance docs (constitution v2.0.0, CLAUDE.md, decisions.md, this file) **plus** the complete `specs/002-ontology-engine/` planning cycle (spec + plan + tasks) — is **committed and pushed to `main`** as of 2026-10-23. No secrets committed (`.env`, `secrets/`, `run/` gitignored).
-- **Next action**: run `/speckit-implement` for `002-ontology-engine`, starting with Phase 1–2 (Setup + Foundational = the M0 full-stack skeleton) and the US1 MVP. No tasks done yet (0/66). Decided plumbing defaults (pgvector, Cloud Run/Vercel) are baked into the plan; confirm/override during implementation.
+- **Next action**: continue `/speckit-implement` at **Phase 3 (US1 — see the fused ontology, the 🎯 MVP)**: baseline matcher + ingest pipeline (resolution tests first), ingest/explorer API endpoints, and the explorer UI. **26/66 tasks done (T001–T026)**; 40 remain. Decided plumbing defaults (pgvector, Cloud Run/Vercel) are baked into the plan; confirm/override during implementation.
+- **Note on the slice**: the proven `src/podcast_ops/` is deliberately **kept alongside** the new `engine/` + `verticals/podcast/` packages (migrate-by-copy-and-generalize), so vertical #1 stays runnable end-to-end (Principle I) until the engine reaches parity in US1–US3; `src/` is retired then.
 - **Blockers**: None.
 - **Live run config (from the slice, still valid for vertical #1)**: Huberman Lab — `TARGET_YOUTUBE_SOURCE=UC2D2CMWXMOVWx7giW1n3LIg`, `TARGET_APPLE_SHOW=1545953110`, write target `TEST_VIDEO_ID=CfRIjrzeGrU`.
 
@@ -29,7 +30,7 @@ whenever a meaningful step completes.
 
 | Milestone | Description | Status |
 |-----------|-------------|--------|
-| M0 | Full-stack skeleton: API over existing core, Postgres, minimal UI, deployed thin (no AI yet) | ⬜ Next |
+| M0 | Full-stack skeleton: API over existing core, Postgres, minimal UI, deployed thin (no AI yet) | 🏗️ Skeleton built (Phases 1–2, T001–T026); deploy-thin at Phase 7 |
 | M1 | Generalized ontology core: declarative object/link/function/action registries; podcast as a vertical plugin | ⬜ |
 | M2 | Entity resolution upgraded (embeddings + vector store) + precision/recall evals vs golden set | ⬜ |
 | M3 | AI agent over the ontology: grounded retrieval + answers; proposes validated, audited, human-approved actions; AI evals + tracing | ⬜ |
@@ -41,6 +42,31 @@ whenever a meaningful step completes.
 ---
 
 ## History (newest first)
+
+### 2026-10-23 (latest) — M0 skeleton implemented (`002` Phases 1–2, T001–T026)
+
+- Ran `/speckit-implement` scoped to the M0 full-stack skeleton (Phase 1 Setup + Phase 2
+  Foundational), stopping before US1.
+- **Phase 1 (T001–T009)**: created the monorepo (`engine/`, `verticals/podcast/`, `apps/api`,
+  `apps/web`, `infra/{docker,deploy,migrations}`, `.github/workflows`), the three Python package
+  `pyproject.toml`s, a hand-scaffolded Next.js app (explorer/ops/evals/agent routes stubbed),
+  `docker-compose` (postgres+pgvector, redis, langfuse) + API Dockerfile, extended `.env.example`
+  + `.gitignore`/`.dockerignore`, ruff/black + ESLint/Prettier config, and a CI skeleton
+  (lint + test jobs; eval-gate/deploy deferred to T049/T060–T061).
+- **Phase 2 (T010–T026)**: engine core — ontology model (`ObjectType`/`LinkType`/`ObjectInstance`/
+  `LinkInstance`), `StagingRecord`, `ResolutionDecision`, the `SourceAdapter`/`Repository`/
+  `EmbeddingProvider` ports, `JsonRepository` (hermetic) + `PostgresRepository` (pgvector, lazy
+  SQLAlchemy) + the read-only view, Alembic initial migration, access gate, the `Vertical`
+  registry (the engine's only discovery path — no engine→vertical import), and `Settings`. Podcast
+  vertical — Show/Episode/Guest/Clip + links, YouTube + Apple adapters (migrated from the slice
+  gateways), registered via `vertical_podcast.registry`. FastAPI app with `/health` reporting the
+  registered ontology.
+- **Verification**: 10 M0 smoke tests pass (engine 6, vertical 3, api 1); the app boots; the
+  read-only view exposes no write methods; optional-dep modules import without their SDKs (Principle
+  VII). `ruff` + `black` clean across `engine`/`verticals`/`apps/api`.
+- **Deliberate deviation logged**: kept `src/podcast_ops/` alongside the new packages so vertical #1
+  stays runnable end-to-end until the engine reaches parity (Principle I); see `decisions.md`.
+- Next: Phase 3 (US1 MVP — fused ontology visible in the explorer).
 
 ### 2026-10-23 (later) — full Spec Kit cycle for `002-ontology-engine` complete; pivot checkpoint committed
 

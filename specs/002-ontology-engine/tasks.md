@@ -27,15 +27,15 @@ Paths follow the monorepo in plan.md: `engine/`, `verticals/podcast/`, `apps/api
 
 **Purpose**: Monorepo layout, package scaffolds, local services, CI skeleton.
 
-- [ ] T001 Create monorepo structure per plan.md (`engine/`, `verticals/podcast/`, `apps/api/`, `apps/web/`, `infra/{docker,deploy,migrations}`, `.github/workflows/`)
-- [ ] T002 [P] Create `engine/pyproject.toml` (package `ontology_engine`, deps: pydantic v2, sqlalchemy 2, alembic, pgvector, httpx, rapidfuzz, anthropic; extras: `embeddings-voyage`, `embeddings-local`, `live`)
-- [ ] T003 [P] Create `verticals/podcast/pyproject.toml` (package `vertical_podcast`, depends on `ontology_engine`)
-- [ ] T004 [P] Create `apps/api/pyproject.toml` (FastAPI + Uvicorn; depends on `ontology_engine` + `vertical_podcast`)
-- [ ] T005 [P] Scaffold `apps/web/` Next.js + TypeScript + Tailwind app (explorer/dashboard/agent routes stubbed)
-- [ ] T006 [P] Author `infra/docker/docker-compose.yml` (services: postgres+pgvector, redis, langfuse) and base `Dockerfile` for the API
-- [ ] T007 [P] Carry forward and extend config/secrets: `.env.example` (YOUTUBE_API_KEY, youtube OAuth token path, ANTHROPIC_API_KEY, VOYAGE_API_KEY optional, DATABASE_URL, REDIS_URL, LANGFUSE_* , TARGET_YOUTUBE_SOURCE, TARGET_APPLE_SHOW, TEST_VIDEO_ID); confirm `.gitignore` covers `.env`, `secrets/`, `run/`
-- [ ] T008 [P] Configure `ruff` + `black` across all Python packages (line-length 100, carry slice config) and ESLint/Prettier for `apps/web`
-- [ ] T009 Create `.github/workflows/ci.yml` skeleton (lint + test jobs; eval-gate + deploy jobs added later in T049, T060–T061)
+- [X] T001 Create monorepo structure per plan.md (`engine/`, `verticals/podcast/`, `apps/api/`, `apps/web/`, `infra/{docker,deploy,migrations}`, `.github/workflows/`)
+- [X] T002 [P] Create `engine/pyproject.toml` (package `ontology_engine`, deps: pydantic v2, sqlalchemy 2, alembic, pgvector, httpx, rapidfuzz, anthropic; extras: `embeddings-voyage`, `embeddings-local`, `live`)
+- [X] T003 [P] Create `verticals/podcast/pyproject.toml` (package `vertical_podcast`, depends on `ontology_engine`)
+- [X] T004 [P] Create `apps/api/pyproject.toml` (FastAPI + Uvicorn; depends on `ontology_engine` + `vertical_podcast`)
+- [X] T005 [P] Scaffold `apps/web/` Next.js + TypeScript + Tailwind app (explorer/dashboard/agent routes stubbed)
+- [X] T006 [P] Author `infra/docker/docker-compose.yml` (services: postgres+pgvector, redis, langfuse) and base `Dockerfile` for the API
+- [X] T007 [P] Carry forward and extend config/secrets: `.env.example` (YOUTUBE_API_KEY, youtube OAuth token path, ANTHROPIC_API_KEY, VOYAGE_API_KEY optional, DATABASE_URL, REDIS_URL, LANGFUSE_* , TARGET_YOUTUBE_SOURCE, TARGET_APPLE_SHOW, TEST_VIDEO_ID); confirm `.gitignore` covers `.env`, `secrets/`, `run/`
+- [X] T008 [P] Configure `ruff` + `black` across all Python packages (line-length 100, carry slice config) and ESLint/Prettier for `apps/web`
+- [X] T009 Create `.github/workflows/ci.yml` skeleton (lint + test jobs; eval-gate + deploy jobs added later in T049, T060–T061)
 
 **Checkpoint**: Repos, services, and CI skeleton exist.
 
@@ -48,23 +48,23 @@ slice modules into their engine/vertical homes.
 
 **⚠️ CRITICAL**: No user story work begins until this phase is complete.
 
-- [ ] T010 [P] Define ontology model in `engine/src/ontology_engine/ontology/types.py`: `ObjectType` (key unique, `properties`, `embeddable_fields`, `source_bindings`), `LinkType` (`key`, `from_type`, `to_type`, `cardinality` one|many)
-- [ ] T011 [P] Define `ObjectInstance` (`id`, `object_type_key`, `properties`, `source_refs` list — **≥1 entry; a fused instance has ≥2 from different sources**, `embedding` nullable) and `LinkInstance` in `engine/src/ontology_engine/ontology/instances.py`
-- [ ] T012 [P] Define `StagingRecord` (`id`, `source_key`, `object_type_key`, `external_id`, `raw_payload`, `fetched_at`, `status` staged|resolved|discarded) in `engine/src/ontology_engine/ingest/staging.py` (migrate from slice `ingest/staging.py`)
-- [ ] T013 [P] Define `ResolutionDecision` (`instance_id`, `members`, `signals[]` of `{name,value,weight,contribution}`, `confidence` 0–1, `matcher` baseline|similarity|combined, `decided_at`) in `engine/src/ontology_engine/resolve/decision.py`
-- [ ] T014 Define the `SourceAdapter` port (`read()->Iterable[StagingRecord]`, `capabilities()`, `confirm_access(capability)->AccessCheckResult`) in `engine/src/ontology_engine/ingest/adapter.py` (generalize slice gateways)
-- [ ] T015 Define the `Repository` port + `ReadOnlyStore` view in `engine/src/ontology_engine/store/repository.py` (stage/list_staging, upsert_instance/get/query, save_resolution/get_resolution, record_attempt/find_attempt/list_attempts, save_embedding/nearest, `read_view()`) — generalize slice `objects/repository.py`
-- [ ] T016 [P] Implement `JsonRepository` backend in `engine/src/ontology_engine/store/json_repo.py` (hermetic tests/offline; required for the CI eval gate)
-- [ ] T017 Implement `PostgresRepository` backend (SQLAlchemy 2 models + pgvector column) in `engine/src/ontology_engine/store/postgres_repo.py`
-- [ ] T018 Create Alembic setup + initial migration (objects, staging, resolution_decisions, action_attempts, embeddings, golden_cases, agent_interactions) in `infra/migrations/`
-- [ ] T019 [P] Implement the `EmbeddingProvider` port + `VoyageEmbeddings` + `LocalEmbeddings` (sentence-transformers) in `engine/src/ontology_engine/embeddings/` (provider chosen by config; local used in CI)
-- [ ] T020 [P] Implement the access-confirmation module (`AccessCheckResult`, per-adapter checks) in `engine/src/ontology_engine/access/check.py` (migrate slice `access_check.py`)
-- [ ] T021 Implement the `Vertical` registration mechanism in `engine/src/ontology_engine/ontology/registry.py` (register ObjectTypes, LinkTypes, SourceAdapters, FunctionDefs, ActionDefs, UI config, golden-set path) — **engine must discover a vertical only through this; no engine module imports a vertical module (Principle I)**
-- [ ] T022 [P] Register podcast object types + links in `verticals/podcast/src/vertical_podcast/objects/` (`Show`, `Episode` [title, description, published_at, duration_s, youtube_ref incl. public engagement counts, apple_ref, source_refs], `Guest`, `Clip`; links episode→show, episode→guest, episode→clip) (migrate slice `objects/episode.py`)
-- [ ] T023 [P] Implement the podcast `SourceAdapter`s in `verticals/podcast/src/vertical_podcast/sources/` (`youtube_adapter.py` read uploads + public engagement counts, write `videos.update`; `apple_adapter.py` read via iTunes lookup, no auth) (migrate slice `ingest/youtube_gateway.py`, `ingest/apple_gateway.py`)
-- [ ] T024 Create `verticals/podcast/src/vertical_podcast/registry.py` wiring the above into the engine registry
-- [ ] T025 Create the FastAPI app skeleton in `apps/api/src/app/main.py` that loads the engine, imports+applies the podcast `registry`, configures logging + error handling, and exposes `GET /health`
-- [ ] T026 [P] Centralized config loader (env → typed settings) in `engine/src/ontology_engine/config.py` (migrate/extend slice `config.py`)
+- [X] T010 [P] Define ontology model in `engine/src/ontology_engine/ontology/types.py`: `ObjectType` (key unique, `properties`, `embeddable_fields`, `source_bindings`), `LinkType` (`key`, `from_type`, `to_type`, `cardinality` one|many)
+- [X] T011 [P] Define `ObjectInstance` (`id`, `object_type_key`, `properties`, `source_refs` list — **≥1 entry; a fused instance has ≥2 from different sources**, `embedding` nullable) and `LinkInstance` in `engine/src/ontology_engine/ontology/instances.py`
+- [X] T012 [P] Define `StagingRecord` (`id`, `source_key`, `object_type_key`, `external_id`, `raw_payload`, `fetched_at`, `status` staged|resolved|discarded) in `engine/src/ontology_engine/ingest/staging.py` (migrate from slice `ingest/staging.py`)
+- [X] T013 [P] Define `ResolutionDecision` (`instance_id`, `members`, `signals[]` of `{name,value,weight,contribution}`, `confidence` 0–1, `matcher` baseline|similarity|combined, `decided_at`) in `engine/src/ontology_engine/resolve/decision.py`
+- [X] T014 Define the `SourceAdapter` port (`read()->Iterable[StagingRecord]`, `capabilities()`, `confirm_access(capability)->AccessCheckResult`) in `engine/src/ontology_engine/ingest/adapter.py` (generalize slice gateways)
+- [X] T015 Define the `Repository` port + `ReadOnlyStore` view in `engine/src/ontology_engine/store/repository.py` (stage/list_staging, upsert_instance/get/query, save_resolution/get_resolution, record_attempt/find_attempt/list_attempts, save_embedding/nearest, `read_view()`) — generalize slice `objects/repository.py`
+- [X] T016 [P] Implement `JsonRepository` backend in `engine/src/ontology_engine/store/json_repo.py` (hermetic tests/offline; required for the CI eval gate)
+- [X] T017 Implement `PostgresRepository` backend (SQLAlchemy 2 models + pgvector column) in `engine/src/ontology_engine/store/postgres_repo.py`
+- [X] T018 Create Alembic setup + initial migration (objects, staging, resolution_decisions, action_attempts, embeddings, golden_cases, agent_interactions) in `infra/migrations/`
+- [X] T019 [P] Implement the `EmbeddingProvider` port + `VoyageEmbeddings` + `LocalEmbeddings` (sentence-transformers) in `engine/src/ontology_engine/embeddings/` (provider chosen by config; local used in CI)
+- [X] T020 [P] Implement the access-confirmation module (`AccessCheckResult`, per-adapter checks) in `engine/src/ontology_engine/access/check.py` (migrate slice `access_check.py`)
+- [X] T021 Implement the `Vertical` registration mechanism in `engine/src/ontology_engine/ontology/registry.py` (register ObjectTypes, LinkTypes, SourceAdapters, FunctionDefs, ActionDefs, UI config, golden-set path) — **engine must discover a vertical only through this; no engine module imports a vertical module (Principle I)**
+- [X] T022 [P] Register podcast object types + links in `verticals/podcast/src/vertical_podcast/objects/` (`Show`, `Episode` [title, description, published_at, duration_s, youtube_ref incl. public engagement counts, apple_ref, source_refs], `Guest`, `Clip`; links episode→show, episode→guest, episode→clip) (migrate slice `objects/episode.py`)
+- [X] T023 [P] Implement the podcast `SourceAdapter`s in `verticals/podcast/src/vertical_podcast/sources/` (`youtube_adapter.py` read uploads + public engagement counts, write `videos.update`; `apple_adapter.py` read via iTunes lookup, no auth) (migrate slice `ingest/youtube_gateway.py`, `ingest/apple_gateway.py`)
+- [X] T024 Create `verticals/podcast/src/vertical_podcast/registry.py` wiring the above into the engine registry
+- [X] T025 Create the FastAPI app skeleton in `apps/api/src/app/main.py` that loads the engine, imports+applies the podcast `registry`, configures logging + error handling, and exposes `GET /health`
+- [X] T026 [P] Centralized config loader (env → typed settings) in `engine/src/ontology_engine/config.py` (migrate/extend slice `config.py`)
 
 **Checkpoint**: Engine core + podcast registration ready; app boots and health-checks.
 
