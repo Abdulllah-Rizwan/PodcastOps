@@ -81,19 +81,19 @@ single-source and is not falsely fused.
 
 ### Tests for User Story 1 (constitution-mandated: resolution)
 
-- [ ] T027 [P] [US1] Unit test the baseline matcher in `engine/tests/test_baseline_matcher.py` (fuses mismatched-ID/slightly-different-title pairs; does **not** fuse near-duplicate-but-different episodes — edge case from spec)
-- [ ] T028 [P] [US1] Integration test the ingest pipeline in `engine/tests/test_ingest_pipeline.py` (**assert an `ObjectInstance` is only created from resolved staging — never from a raw payload**; single-source stays single-source)
+- [X] T027 [P] [US1] Unit test the baseline matcher in `engine/tests/test_baseline_matcher.py` (fuses mismatched-ID/slightly-different-title pairs; does **not** fuse near-duplicate-but-different episodes — edge case from spec)
+- [X] T028 [P] [US1] Integration test the ingest pipeline in `engine/tests/test_ingest_pipeline.py` (**assert an `ObjectInstance` is only created from resolved staging — never from a raw payload**; single-source stays single-source)
 
 ### Implementation for User Story 1
 
-- [ ] T029 [US1] Implement the baseline `Matcher` (`block()` candidate generation + `score()` → signals+confidence via rapidfuzz on normalized title/date/duration) in `engine/src/ontology_engine/resolve/baseline.py` (migrate slice `resolve/matcher.py`)
-- [ ] T030 [US1] Implement `conform` (staging → conformed `ObjectInstance` properties) in `engine/src/ontology_engine/resolve/conform.py` (migrate slice `resolve/conform.py`)
-- [ ] T031 [US1] Implement the ingestion orchestrator (adapter → stage → block → score → `ResolutionDecision` → `upsert_instance` → generate+store embedding) in `engine/src/ontology_engine/ingest/pipeline.py`
-- [ ] T032 [US1] Wire background ingestion: `arq` worker entrypoint in `apps/api/src/app/worker.py` calling the pipeline (same callable usable as a Cloud Run Job)
-- [ ] T033 [US1] Implement ingestion endpoints in `apps/api/src/app/routers/ingest.py`: `POST /ingest/run` (enqueue, return job_id), `GET /ingest/jobs/{id}` (status + counts staged/fused/single_source), `GET /access/check`
-- [ ] T034 [US1] Implement explorer endpoints in `apps/api/src/app/routers/ontology.py`: `GET /ontology/types`, `GET /ontology/types/{key}/instances` (paginated, `fused` filter), `GET /ontology/instances/{id}`, `GET /ontology/instances/{id}/resolution` (**signals[] + confidence + matcher + rejected best candidate**), `GET /ontology/links`
-- [ ] T035 [P] [US1] Build the ontology explorer UI in `apps/web/app/explorer/` (type list, instance list with fused badge, instance detail with source_refs + linked instances)
-- [ ] T036 [P] [US1] Build the resolution-inspection view in `apps/web/app/explorer/resolution/` (show matched signals + confidence for a fused Episode)
+- [X] T029 [US1] Implement the baseline `Matcher` (`block()` candidate generation + `score()` → signals+confidence via rapidfuzz on normalized title/date/duration) in `engine/src/ontology_engine/resolve/baseline.py` (migrate slice `resolve/matcher.py`)
+- [X] T030 [US1] Implement `conform` (staging → conformed `ObjectInstance` properties) in `engine/src/ontology_engine/resolve/conform.py` (migrate slice `resolve/conform.py`)
+- [X] T031 [US1] Implement the ingestion orchestrator (adapter → stage → block → score → `ResolutionDecision` → `upsert_instance` → generate+store embedding) in `engine/src/ontology_engine/ingest/pipeline.py`
+- [X] T032 [US1] Wire background ingestion: `arq` worker entrypoint in `apps/api/src/app/worker.py` calling the pipeline (same callable usable as a Cloud Run Job)
+- [X] T033 [US1] Implement ingestion endpoints in `apps/api/src/app/routers/ingest.py`: `POST /ingest/run` (enqueue, return job_id), `GET /ingest/jobs/{id}` (status + counts staged/fused/single_source), `GET /access/check`
+- [X] T034 [US1] Implement explorer endpoints in `apps/api/src/app/routers/ontology.py`: `GET /ontology/types`, `GET /ontology/types/{key}/instances` (paginated, `fused` filter), `GET /ontology/instances/{id}`, `GET /ontology/instances/{id}/resolution` (**signals[] + confidence + matcher + rejected best candidate**), `GET /ontology/links`
+- [X] T035 [P] [US1] Build the ontology explorer UI in `apps/web/app/explorer/` (type list, instance list with fused badge, instance detail with source_refs + linked instances)
+- [X] T036 [P] [US1] Build the resolution-inspection view in `apps/web/app/explorer/resolution/` (show matched signals + confidence for a fused Episode)
 
 **Checkpoint**: US1 fully functional — fusion visible with platforms, signals, and confidence (SC-001).
 

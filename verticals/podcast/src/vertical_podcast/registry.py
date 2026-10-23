@@ -57,3 +57,11 @@ def register(registry: OntologyRegistry, settings: "Settings | None" = None) -> 
     vertical = build_vertical(settings)
     registry.register(vertical)
     return vertical
+
+
+def source_targets(settings: "Settings") -> dict[str, object]:
+    """Map each podcast source to the configured show id (keeps podcast ids out of the engine)."""
+    return {
+        "youtube": settings.target_youtube_source,
+        "apple": settings.target_apple_show,
+    }

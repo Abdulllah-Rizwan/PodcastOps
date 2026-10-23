@@ -17,11 +17,11 @@ whenever a meaningful step completes.
 
 - **Phase**: 🚀 **PIVOTED — building the ontology engine** (2026-10-23). The original narrow validation slice is **complete and proven** (2026-10-21, commit `bcc5502`); the project has been deliberately redefined into a reusable, **AI-native ontology engine proven by verticals** (constitution MAJOR bump **1.1.0 → 2.0.0**). Podcast ops = **vertical #1** (the live demo). See `decisions.md` (2026-10-23).
 - **Active feature**: `specs/002-ontology-engine` — the full-stack engine. Its **full Spec Kit cycle is complete**: `spec.md` + requirements checklist (`/speckit-specify`), `plan.md` + `research.md` + `data-model.md` + `contracts/` + `quickstart.md` (`/speckit-plan`), and `tasks.md` with **66 tasks** (`/speckit-tasks`). `specs/001-podcast-ops-slice` remains the *completed* slice.
-- **Current milestone**: **M0 skeleton built** (Phases 1–2 of `002`, tasks T001–T026 done). The monorepo (`engine/`, `verticals/podcast/`, `apps/api`, `apps/web`, `infra/`), engine core (ontology model, ports, JSON + Postgres repositories, registry, config), the podcast vertical (Show/Episode/Guest/Clip + YouTube/Apple adapters, registered through the engine), and the FastAPI `/health` app all exist; **10 M0 smoke tests pass, ruff + black clean**. The old slice's M0–M3 are satisfied and folded in; its proven Python core seeds the engine.
+- **Current milestone**: **M0 skeleton + US1 (fused ontology) built** (Phases 1–3 of `002`, tasks T001–T036 done). On top of the M0 skeleton, US1 adds the engine resolution core (baseline matcher with inspectable signals+confidence, generic declaration-driven conform, the ingest→resolve→object pipeline that only ever makes objects from *resolved* staging), the ingest + ontology-explorer API endpoints (`/ingest/run`, `/ingest/jobs/{id}`, `/access/check`, `/ontology/*`), the arq worker entrypoint, and the explorer UI (type list → instances with fused badge → instance detail → resolution-inspection view). **21 tests pass (incl. matcher + pipeline stage-separation + explorer API), ruff + black clean.** The old slice's M0–M3 are satisfied and folded in; its proven Python core seeds the engine.
 - **Decided direction**: engine-is-the-product; generality *earned* by a second vertical (M5), never asserted. Full-stack: web UI (ontology explorer + ops dashboard + AI agent), FastAPI backend over the existing Python core, Postgres + **pgvector**, background worker, AI layer grounded in the ontology, eval + observability harness, cloud (default: GCP Cloud Run + Vercel).
 - **Carried forward from the slice**: proven YouTube + Apple read, honest entity resolution (`Episode` fusion), the decision-rule pattern, and the safe/mock-first/idempotent/audited writeback seam. The **199 real matched pairs** from the live run seed the entity-resolution golden eval set.
 - **Committed & pushed**: slice at commit `bcc5502` on `main` → `github.com/Abdulllah-Rizwan/PodcastOps`. The pivot checkpoint — governance docs (constitution v2.0.0, CLAUDE.md, decisions.md, this file) **plus** the complete `specs/002-ontology-engine/` planning cycle (spec + plan + tasks) — is **committed and pushed to `main`** as of 2026-10-23. No secrets committed (`.env`, `secrets/`, `run/` gitignored).
-- **Next action**: continue `/speckit-implement` at **Phase 3 (US1 — see the fused ontology, the 🎯 MVP)**: baseline matcher + ingest pipeline (resolution tests first), ingest/explorer API endpoints, and the explorer UI. **26/66 tasks done (T001–T026)**; 40 remain. Decided plumbing defaults (pgvector, Cloud Run/Vercel) are baked into the plan; confirm/override during implementation.
+- **Next action**: continue `/speckit-implement` at **Phase 4 (US2 — decide → approve → act, safely)**: the read-only `FunctionDef` registry + `apple_without_youtube` function, the mock-first/idempotent/approval-gated Action port + `youtube_update_show_notes` action, the functions/actions API endpoints, and the ops dashboard UI (constitution-mandated function + mock-action-seam tests first). **36/66 tasks done (T001–T036)**; 30 remain. The US1 explorer UI is coded but not yet run against a live ingest (that's the deployed end-to-end check, T062–T063 in Phase 7).
 - **Note on the slice**: the proven `src/podcast_ops/` is deliberately **kept alongside** the new `engine/` + `verticals/podcast/` packages (migrate-by-copy-and-generalize), so vertical #1 stays runnable end-to-end (Principle I) until the engine reaches parity in US1–US3; `src/` is retired then.
 - **Blockers**: None.
 - **Live run config (from the slice, still valid for vertical #1)**: Huberman Lab — `TARGET_YOUTUBE_SOURCE=UC2D2CMWXMOVWx7giW1n3LIg`, `TARGET_APPLE_SHOW=1545953110`, write target `TEST_VIDEO_ID=CfRIjrzeGrU`.
@@ -31,7 +31,7 @@ whenever a meaningful step completes.
 | Milestone | Description | Status |
 |-----------|-------------|--------|
 | M0 | Full-stack skeleton: API over existing core, Postgres, minimal UI, deployed thin (no AI yet) | 🏗️ Skeleton built (Phases 1–2, T001–T026); deploy-thin at Phase 7 |
-| M1 | Generalized ontology core: declarative object/link/function/action registries; podcast as a vertical plugin | ⬜ |
+| M1 | Generalized ontology core: declarative object/link/function/action registries; podcast as a vertical plugin | 🏗️ In progress — object/link/source registries + resolution pipeline live via US1 (T027–T036); function/action registries land in US2 |
 | M2 | Entity resolution upgraded (embeddings + vector store) + precision/recall evals vs golden set | ⬜ |
 | M3 | AI agent over the ontology: grounded retrieval + answers; proposes validated, audited, human-approved actions; AI evals + tracing | ⬜ |
 | M4 | Harden & deploy for real: CI/CD eval gate, observability, secrets, autoscale; UI complete | ⬜ |
@@ -43,7 +43,33 @@ whenever a meaningful step completes.
 
 ## History (newest first)
 
-### 2026-10-23 (latest) — M0 skeleton implemented (`002` Phases 1–2, T001–T026)
+### 2026-10-23 (latest) — US1 implemented: see the fused ontology (`002` Phase 3, T027–T036)
+
+- Ran `/speckit-implement` for Phase 3 (US1 — the 🎯 MVP), tests-first per the constitution.
+- **Resolution core (engine)**: `BaselineMatcher` (T029) — normalized-title + date + duration
+  signals via rapidfuzz, `block`/`score`/`match` with greedy one-to-one (no fan-out), exposing
+  `Signal`s + confidence and a best-rejected-candidate for singletons (Principle III); generic
+  `conform` (T030) that is declaration-driven (fills scalar props by source-preference order and
+  `<source>_ref` props per source, so no podcast specifics leak into the engine); the
+  `IngestionPipeline` (T031) wiring adapter→stage→block→score→ResolutionDecision→upsert — **objects
+  are only ever made from resolved staging** (Principle II).
+- **API (apps/api)**: ingest router (T033 — `POST /ingest/run`, `GET /ingest/jobs/{id}`,
+  `GET /access/check`) with an in-memory job store; ontology-explorer router (T034 —
+  `/ontology/types`, `/ontology/types/{key}/instances` with `fused`/`source` filters,
+  `/ontology/instances/{id}`, `/ontology/instances/{id}/resolution`, `/ontology/links`); the arq
+  worker entrypoint (T032) reusing the same `execute_ingestion` callable; a store factory + the
+  vertical's `source_targets` helper (keeps podcast ids out of the engine).
+- **UI (apps/web)**: explorer (T035) — type list → instance list with fused badge + confidence →
+  instance detail with source refs — and the resolution-inspection view (T036) showing the signal
+  table, confidence, matcher, and best rejected candidate.
+- **Tests (constitution-mandated)**: `test_baseline_matcher.py` (T027 — fuses same episode across
+  sources, does not fuse different episodes, never pairs within one source, no fan-out) and
+  `test_ingest_pipeline.py` (T028 — instances only from resolved staging; single-source stays
+  single-source), plus `test_ontology_api.py` for the explorer + hermetic ingest endpoints.
+- **Verification**: 21 tests pass; `ruff` + `black` clean. The explorer UI is coded but not yet run
+  against a live ingest (deployed end-to-end is Phase 7, T062–T063). Next: Phase 4 (US2).
+
+### 2026-10-23 (earlier) — M0 skeleton implemented (`002` Phases 1–2, T001–T026)
 
 - Ran `/speckit-implement` scoped to the M0 full-stack skeleton (Phase 1 Setup + Phase 2
   Foundational), stopping before US1.

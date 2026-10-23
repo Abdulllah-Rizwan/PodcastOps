@@ -86,6 +86,30 @@ class Settings:
             target_apple_show=get("TARGET_APPLE_SHOW"),
         )
 
+    @classmethod
+    def empty(
+        cls, *, run_dir: str | Path = "./run", embedding_provider: str = "local"
+    ) -> "Settings":
+        """An all-None config (no DB, no targets, no secrets) for hermetic tests/offline use."""
+        return cls(
+            database_url=None,
+            redis_url=None,
+            run_dir=Path(run_dir),
+            embedding_provider=embedding_provider,
+            voyage_api_key=None,
+            anthropic_api_key=None,
+            langfuse_host=None,
+            langfuse_public_key=None,
+            langfuse_secret_key=None,
+            youtube_api_key=None,
+            youtube_oauth_client_secrets=None,
+            youtube_oauth_token=None,
+            test_channel_id=None,
+            test_video_id=None,
+            target_youtube_source=None,
+            target_apple_show=None,
+        )
+
     @property
     def use_postgres(self) -> bool:
         return bool(self.database_url)
