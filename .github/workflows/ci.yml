@@ -56,4 +56,47 @@ jobs:
       - name: Entity-resolution eval (combined, reported)
         run: python -m ontology_engine.evals.run_gate verticals/podcast/evals/golden combined
 
-  # build-and-deploy: added in T060-T061 (image build+push, Cloud Run deploy; Vercel auto-deploys web).
+  build-and-deploy:
+    # Deploys only from main, and only once the maintainer opts in by setting the repo variable
+    # DEPLOY_ENABLED=true (and the GCP secrets/vars below). Until then this job is skipped, so CI
+    # stays green before any cloud accounts exist. Gated behind lint + test + the eval gate.
+    needs: [lint, test, eval-gate]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Workload Identity Federation (keyless auth to GCP)
+    env:
+      PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      REGION: ${{ vars.GCP_REGION }}
+      REPO: podcast-ops
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud (WIF)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOY_SA }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
+
+      - name: Build and push the API image (shared by the service and the ingest job)
+        run: |
+          export IMAGE_TAG=${GITHUB_SHA::7}
+          IMAGE=${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/api:${IMAGE_TAG}
+          docker build -f infra/docker/Dockerfile.api -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> "$GITHUB_ENV"
+
+      - name: Deploy Cloud Run service + ingest job
+        run: |
+          envsubst < infra/deploy/cloud-run-api.yaml        | gcloud run services replace - --region="$REGION" --quiet
+          envsubst < infra/deploy/cloud-run-ingest-job.yaml | gcloud run jobs     replace - --region="$REGION" --quiet
+
+  # Web (apps/web) auto-deploys on push to main via the Vercel GitHub integration (infra/deploy/vercel.json);
+  # no job here. Set the Vercel Project Root Directory to apps/web and NEXT_PUBLIC_API_BASE_URL in Vercel.

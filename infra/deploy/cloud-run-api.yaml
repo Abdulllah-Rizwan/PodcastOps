@@ -1,0 +1,75 @@
+# Cloud Run service — the FastAPI backend (ontology engine + podcast vertical).
+#
+# Apply with:
+#   gcloud run services replace infra/deploy/cloud-run-api.yaml --region=$REGION
+# Substitute $PROJECT_ID / $REGION / $IMAGE_TAG first (envsubst or sed), or set them in CI (T061).
+# Secrets are mounted from GCP Secret Manager by name:version — never baked into the image or env.
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: podcast-ops-api
+  labels:
+    app: podcast-ops
+    component: api
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "4"
+    spec:
+      containerConcurrency: 40
+      timeoutSeconds: 300
+      containers:
+        - image: ${REGION}-docker.pkg.dev/${PROJECT_ID}/podcast-ops/api:${IMAGE_TAG}
+          ports:
+            - containerPort: 8000
+          resources:
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          env:
+            - name: EMBEDDING_PROVIDER
+              value: voyage
+            - name: REDIS_URL
+              value: "" # API does not need Redis; the worker/job path does
+            # --- Secrets (GCP Secret Manager → env) ---
+            - name: DATABASE_URL # Neon Postgres + pgvector connection string
+              valueFrom:
+                secretKeyRef:
+                  name: DATABASE_URL
+                  key: latest
+            - name: YOUTUBE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: YOUTUBE_API_KEY
+                  key: latest
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ANTHROPIC_API_KEY
+                  key: latest
+            - name: VOYAGE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: VOYAGE_API_KEY
+                  key: latest
+            - name: LANGFUSE_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: LANGFUSE_PUBLIC_KEY
+                  key: latest
+            - name: LANGFUSE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: LANGFUSE_SECRET_KEY
+                  key: latest
+          startupProbe:
+            httpGet:
+              path: /health
+            failureThreshold: 10
+            periodSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+            periodSeconds: 30

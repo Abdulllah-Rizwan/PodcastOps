@@ -1,0 +1,64 @@
+# Cloud Run Job — scheduled background ingestion (same image as the API, one-shot command).
+#
+# Apply with:
+#   gcloud run jobs replace infra/deploy/cloud-run-ingest-job.yaml --region=$REGION
+# Then schedule it (Cloud Scheduler → Cloud Run Jobs), e.g. every 6 hours:
+#   gcloud scheduler jobs create http podcast-ops-ingest \
+#     --location=$REGION --schedule="0 */6 * * *" \
+#     --uri="https://$REGION-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/$PROJECT_ID/jobs/podcast-ops-ingest:run" \
+#     --http-method=POST --oauth-service-account-email=$SCHEDULER_SA
+#
+# The job runs `python -m app.jobs` (one-shot ingest), reusing the same execute_ingestion callable
+# as the API and the arq worker. It writes to the same Neon database the API reads.
+apiVersion: run.googleapis.com/v1
+kind: Job
+metadata:
+  name: podcast-ops-ingest
+  labels:
+    app: podcast-ops
+    component: ingest-job
+spec:
+  template:
+    spec:
+      template:
+        spec:
+          maxRetries: 2
+          timeoutSeconds: 900
+          containers:
+            - image: ${REGION}-docker.pkg.dev/${PROJECT_ID}/podcast-ops/api:${IMAGE_TAG}
+              command: ["python", "-m", "app.jobs"]
+              resources:
+                limits:
+                  cpu: "1"
+                  memory: 512Mi
+              env:
+                - name: EMBEDDING_PROVIDER
+                  value: voyage
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: DATABASE_URL
+                      key: latest
+                - name: YOUTUBE_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: YOUTUBE_API_KEY
+                      key: latest
+                - name: VOYAGE_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: VOYAGE_API_KEY
+                      key: latest
+                # Writeback OAuth token (owned test channel only) — mounted as a file secret.
+                - name: YOUTUBE_OAUTH_TOKEN
+                  value: /secrets/youtube_token.json
+                - name: TARGET_YOUTUBE_SOURCE
+                  valueFrom:
+                    secretKeyRef:
+                      name: TARGET_YOUTUBE_SOURCE
+                      key: latest
+                - name: TARGET_APPLE_SHOW
+                  valueFrom:
+                    secretKeyRef:
+                      name: TARGET_APPLE_SHOW
+                      key: latest

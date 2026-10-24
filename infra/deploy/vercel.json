@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "git": { "deploymentEnabled": { "main": true } },
+  "_comment": "Set Vercel Project Root Directory to apps/web. NEXT_PUBLIC_API_BASE_URL (the deployed Cloud Run API URL) is set in Vercel project env, not committed here."
+}
