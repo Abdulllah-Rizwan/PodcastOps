@@ -15,27 +15,30 @@ whenever a meaningful step completes.
 
 ## Current Status
 
-> ### ⏸️ STOPPED FOR THE DAY — 2026-10-23 (end of day). START HERE TOMORROW (2026-10-24):
-> **Where we are:** US1–US4 are built, committed, and pushed to `main` (HEAD `92f6207`). **58/66 tasks done**, M0–M3 complete, **50 tests pass hermetically, ruff + black clean**. Working tree is **clean** (nothing uncommitted).
+> ### ⏸️ STOPPED FOR THE DAY — 2026-10-24 (end of day). START HERE TOMORROW (2026-10-25):
+> **Where we are:** Phase 7 **local** tasks are done. US1–US4 + the Phase 7 local work are built, committed, and pushed to `main` (HEAD `e3d7680`, plus this end-of-day docs commit). **63/66 tasks done** (T059, T060, T061, T064, T066 landed today), M0–M3 complete + M4 partially built, **61 tests pass hermetically, ruff + black clean**. Working tree clean after the docs commit.
 >
-> **Resume at Phase 7 (Polish & Cross-Cutting), T059–T066** — run `/speckit-implement` scoped to Phase 7. Two groups:
-> 1. **Can do now (no credentials), do these first:**
->    - **T059** — engine/vertical seam-guard test (`engine/tests/test_engine_vertical_seam.py`): assert no `engine/` module imports `verticals/` (SC-005). Pure/hermetic.
->    - **T060** — author deploy config in `infra/deploy/` (Cloud Run API, Cloud Run Job + Scheduler for ingest, Neon/Cloud SQL + pgvector, Vercel for `apps/web`, GCP Secret Manager). Config files only.
->    - **T061** — add build+push image + deploy-to-Cloud-Run jobs to `.github/workflows/` (gated behind lint + test + the `eval-gate`); confirm Vercel auto-deploy.
->    - **T064** — `README.md` (engine vs vertical, run/deploy, the data→logic→action→AI story) + architecture diagram.
->    - **T066** — security pass (no secrets committed, owned-target-only, agent can't execute un-approved actions). Mostly a review + assertions.
-> 2. **Needs YOUR accounts/keys — pause and ask the user before starting:**
->    - **T062** — live `GET /access/check` against the real show → expect 3/3 (needs `YOUTUBE_API_KEY`, `YOUTUBE_OAUTH_TOKEN`, show config).
->    - **T063** — deploy + run `quickstart.md` Scenarios 1–4 end-to-end on Huberman Lab (needs GCP/Vercel + `ANTHROPIC_API_KEY` for the agent). This is the SC-006 live spine + the first real run of all four UIs.
->    - **T065** — final progress/decisions update once M4 is actually deployed.
+> **Only 3 tasks remain — all credential/deploy-gated: T062, T063, T065.** Tomorrow is mostly *account setup* (GCP + Neon + Voyage + Anthropic key), then the live check and deploy.
 >
-> **Recommended order tomorrow:** T059 → T064 → T066 → T060 → T061 (all local), then stop and confirm credentials/accounts with the user before T062/T063/T065.
+> **Decisions locked today** (confirmations of planned defaults, so not deviation-log entries): DB host = **Neon** (Postgres + pgvector); embeddings = **Voyage** (`EMBEDDING_PROVIDER=voyage`, needs `VOYAGE_API_KEY`); agent stays on **Claude** (needs separate **API credits** — Claude Pro does **not** grant API access; a free-LLM adapter was offered and **deferred**).
+>
+> **DO FIRST TOMORROW — T062 needs NO new setup (YouTube creds already in `.env` + `secrets/`):**
+> run the live `GET /access/check` against the real show (Huberman) and confirm **3/3** (YouTube read, Apple read, YouTube write scope). Start the API (`uvicorn app.main:app --app-dir apps/api/src`) and hit `/access/check`, or call the engine access module directly. If the YouTube OAuth token has expired (minted 2026-10-21), re-run the auth consent to refresh `secrets/youtube_token.json`.
+>
+> **THEN — account setup the user is doing tomorrow (see `infra/deploy/README.md` for exact commands):**
+> 1. **Neon** — create project, `CREATE EXTENSION vector;`, copy connection string → `DATABASE_URL`.
+> 2. **Voyage** — get `VOYAGE_API_KEY`; keep `EMBEDDING_PROVIDER=voyage`.
+> 3. **Anthropic** — buy API credits at console.anthropic.com, get `ANTHROPIC_API_KEY` (Pro ≠ API).
+> 4. **GCP** — project + billing; enable run/artifactregistry/secretmanager/cloudscheduler APIs; Artifact Registry repo; Secret Manager secrets (one per row in `infra/deploy/README.md`); run the Alembic migration against Neon.
+> 5. **CI deploy** — set GitHub repo vars `DEPLOY_ENABLED=true`, `GCP_PROJECT_ID`, `GCP_REGION` + secrets `GCP_WIF_PROVIDER`, `GCP_DEPLOY_SA` (Workload Identity Federation). Until `DEPLOY_ENABLED=true`, the deploy job stays dormant.
+> 6. **Vercel** — import repo, Root Directory = `apps/web`, set `NEXT_PUBLIC_API_BASE_URL` to the Cloud Run URL.
+>
+> **THEN — T063** (the SC-006 live spine + M4 Definition of Done): deploy (CI does the build/push + Cloud Run deploy once the vars are set), then run `specs/002-ontology-engine/quickstart.md` Scenarios 1–4 against the deployed stack on Huberman Lab; capture the audit trail. **T065**: mark M4 built here + log any deviations in `decisions.md`.
 >
 > **Verify the baseline before starting (should be green):**
-> `PYTHONPATH="engine/src;verticals/podcast/src;apps/api/src" python -m pytest engine/tests verticals/podcast/tests apps/api/tests` → **50 passed**. (Bare `pytest` under-collects; name the three roots — see the known test-discovery note below.)
+> `PYTHONPATH="engine/src;verticals/podcast/src;apps/api/src" python -m pytest engine/tests verticals/podcast/tests apps/api/tests` → **61 passed**. (Bare `pytest` under-collects; name the three roots — see the known test-discovery note below.)
 >
-> **Known follow-ups to fold in opportunistically (already logged):** adapters emit `duration_seconds` but the episode type/matcher expect `duration_s` (duration signal inert — fix when wiring live ingest in T062/T063); `traverse` returns no neighbors until `LinkInstance`s are materialized; `/agent/ask` is JSON not SSE streaming; add `testpaths` to `pyproject`/`pytest.ini` so bare `pytest` collects all 3 roots.
+> **Known follow-ups to fold in opportunistically (already logged):** adapters emit `duration_seconds` but the episode type/matcher expect `duration_s` (duration signal inert — fix when wiring live ingest in T062/T063); `traverse` returns no neighbors until `LinkInstance`s are materialized; `/agent/ask` is JSON not SSE streaming; add `testpaths` to `pyproject`/`pytest.ini` so bare `pytest` collects all 3 roots; the agent layer is Anthropic-bound in `ai/agent.py` (tools/propose are provider-neutral) — extract an `Agent` port + free-LLM adapter if a non-Claude demo is wanted.
 
 - **Phase**: 🚀 **PIVOTED — building the ontology engine** (2026-10-23). The original narrow validation slice is **complete and proven** (2026-10-21, commit `bcc5502`); the project has been deliberately redefined into a reusable, **AI-native ontology engine proven by verticals** (constitution MAJOR bump **1.1.0 → 2.0.0**). Podcast ops = **vertical #1** (the live demo). See `decisions.md` (2026-10-23).
 - **Active feature**: `specs/002-ontology-engine` — the full-stack engine. Its **full Spec Kit cycle is complete**: `spec.md` + requirements checklist (`/speckit-specify`), `plan.md` + `research.md` + `data-model.md` + `contracts/` + `quickstart.md` (`/speckit-plan`), and `tasks.md` with **66 tasks** (`/speckit-tasks`). `specs/001-podcast-ops-slice` remains the *completed* slice.
@@ -43,7 +46,7 @@ whenever a meaningful step completes.
 - **Decided direction**: engine-is-the-product; generality *earned* by a second vertical (M5), never asserted. Full-stack: web UI (ontology explorer + ops dashboard + AI agent), FastAPI backend over the existing Python core, Postgres + **pgvector**, background worker, AI layer grounded in the ontology, eval + observability harness, cloud (default: GCP Cloud Run + Vercel).
 - **Carried forward from the slice**: proven YouTube + Apple read, honest entity resolution (`Episode` fusion), the decision-rule pattern, and the safe/mock-first/idempotent/audited writeback seam. The **199 real matched pairs** from the live run seed the entity-resolution golden eval set.
 - **Committed & pushed**: slice at commit `bcc5502` on `main` → `github.com/Abdulllah-Rizwan/PodcastOps`. The pivot checkpoint — governance docs (constitution v2.0.0, CLAUDE.md, decisions.md, this file) **plus** the complete `specs/002-ontology-engine/` planning cycle (spec + plan + tasks) — is **committed and pushed to `main`** as of 2026-10-23. No secrets committed (`.env`, `secrets/`, `run/` gitignored).
-- **Next action**: continue `/speckit-implement` at **Phase 7 (Polish & Cross-Cutting)**: engine/vertical seam guard test, Dockerfiles + Cloud Run / Vercel deploy + CI build/deploy jobs, observability + secrets, and the live end-to-end run on the real Huberman show (T059–T066). **58/66 tasks done (T001–T058)**; 8 remain. The US1 explorer + US2 ops + US3 eval + US4 agent UIs are coded but not yet run against a live ingest, and the agent needs an `ANTHROPIC_API_KEY` to answer live — both are exercised in the Phase 7 deploy/E2E check (T062–T063).
+- **Next action**: **T062 first (no setup needed)** — run the live `GET /access/check` on the real show; then the user sets up Neon + Voyage + Anthropic + GCP + Vercel (see the START-HERE block above and `infra/deploy/README.md`) and we do **T063** (deploy + live E2E on Huberman, the SC-006 spine + M4 DoD) and **T065** (mark M4 built). **63/66 tasks done (T001–T061, T064, T066)**; 3 remain (T062, T063, T065). The explorer/ops/eval/agent UIs are coded but still only exercised hermetically — their first live run is T063.
 - **Note on the slice**: the proven `src/podcast_ops/` is deliberately **kept alongside** the new `engine/` + `verticals/podcast/` packages (migrate-by-copy-and-generalize), so vertical #1 stays runnable end-to-end (Principle I) until the engine reaches parity in US1–US3; `src/` is retired then.
 - **Blockers**: None.
 - **Live run config (from the slice, still valid for vertical #1)**: Huberman Lab — `TARGET_YOUTUBE_SOURCE=UC2D2CMWXMOVWx7giW1n3LIg`, `TARGET_APPLE_SHOW=1545953110`, write target `TEST_VIDEO_ID=CfRIjrzeGrU`.
@@ -56,7 +59,7 @@ whenever a meaningful step completes.
 | M1 | Generalized ontology core: declarative object/link/function/action registries; podcast as a vertical plugin | ✅ Done — object/link/source registries + resolution pipeline (US1, T027–T036) and function/action registries + safe-action port (US2, T037–T044); podcast is a plugin via `Vertical`/`OntologyRegistry` |
 | M2 | Entity resolution upgraded (embeddings + vector store) + precision/recall evals vs golden set | ✅ Done (eval side) — similarity + combined matchers, golden set (199 real pairs + 116 hard negatives), precision/recall/F1 harness + hermetic CI gate (US3, T045–T051). Baseline P=R=1.000. Live pgvector-backed similarity ingest is wired but exercised only hermetically until Phase 7 deploy (T062–T063) |
 | M3 | AI agent over the ontology: grounded retrieval + answers; proposes validated, audited, human-approved actions; AI evals + tracing | ✅ Done — grounded tools + Opus-5.5 Tool Runner agent returning GroundedAnswer (citations to real ids), propose-only (`propose_action` never executes), Langfuse tracing seam, deterministic AI evals + guarded Haiku judge, `/agent/*` endpoints + chat UI (US4, T052–T058). Live answers need an `ANTHROPIC_API_KEY`; graceful 503 without one |
-| M4 | Harden & deploy for real: CI/CD eval gate, observability, secrets, autoscale; UI complete | ⬜ |
+| M4 | Harden & deploy for real: CI/CD eval gate, observability, secrets, autoscale; UI complete | 🏗️ Partial — **local** Phase 7 done (T059 seam guard, T060 Neon/Cloud Run/Vercel deploy config, T061 gated CI build+deploy job, T064 README, T066 security pass). Remaining: live access check (T062), deploy + live E2E on the real show (T063), M4 sign-off (T065) — all credential/account-gated |
 | M5 | Vertical #2: a second domain on the same engine, no engine rewrite — the generality proof | ⬜ |
 
 **Prior (slice) milestones — all ✅ done 2026-10-21, folded into the above:** M0 access gate (3/3), M1 fuse (541 YouTube + 200 Apple → 542 Episodes, 199 matched), M2 one decision rule, M3 mock-then-real `videos.update` to `CfRIjrzeGrU` (idempotent, audited).
@@ -64,6 +67,38 @@ whenever a meaningful step completes.
 ---
 
 ## History (newest first)
+
+### 2026-10-24 — Phase 7 local tasks done (seam guard, security, deploy config, CI deploy); M4 partial
+
+- Resumed at Phase 7 and completed all **local** (credential-free) tasks, in the recommended order:
+  - **T059** — engine/vertical seam guard `engine/tests/test_engine_vertical_seam.py`: AST scan asserts
+    no `engine/` module imports a vertical, plus a `vertical_podcast` string guard (SC-005).
+  - **T064** — rewrote `README.md` for the ontology engine: engine-vs-vertical seam, the
+    data→logic→action→AI story with an ASCII architecture diagram, run/deploy, status.
+  - **T066** — security pass as executable tests: `engine/tests/test_security_posture.py` (gitignore +
+    no tracked secrets; `execute` refuses without approval; the whole `ai/` layer has **zero** `.execute(`
+    calls; `propose_action` only mock-previews) and `verticals/podcast/tests/test_security_owned_target.py`
+    (writeback refuses any channel but the owned test channel).
+  - **T060** — Neon-based deploy config in `infra/deploy/` (`cloud-run-api.yaml`, `cloud-run-ingest-job.yaml`,
+    `vercel.json`, runbook `README.md`) + a one-shot `apps/api/src/app/jobs.py` ingest entrypoint
+    (`python -m app.jobs`) for the Cloud Run Job, reusing the same `execute_ingestion` callable as the API/worker.
+  - **T061** — added the gated `build-and-deploy` job to `.github/workflows/ci.yml` (build/push image +
+    `gcloud run` deploy of the service and job), `needs: [lint, test, eval-gate]`, dormant until repo var
+    `DEPLOY_ENABLED=true`.
+- **Verification: 61 tests pass hermetically** (was 50; +11 new), ruff + black clean across 82 files; CI and
+  both Cloud Run manifests parse as valid YAML; `app.jobs` imports.
+- Committed + pushed to `main` as `e3d7680` (Phase 7 local) plus this end-of-day docs commit.
+- **Decisions locked (planned defaults, not deviations):** Neon for Postgres+pgvector; Voyage for embeddings
+  (`EMBEDDING_PROVIDER=voyage`); agent stays on Claude (API credits required — **Claude Pro grants no API
+  access**; a free-LLM adapter was offered and deferred — the agent is Anthropic-bound only in `ai/agent.py`,
+  while `ai/tools.py` + `ai/propose.py` are provider-neutral).
+- **Clarified** that pgvector *stores/searches* vectors but does not *generate* them — an embedding model
+  (Voyage / local / hashing) is still needed to produce them; and that GCP provides compute/secrets, not the
+  database, so Neon is the single Postgres host (no second DB).
+- **M4 is now partial** (local done). **63/66 tasks; 3 remain — all account/deploy-gated: T062, T063, T065.**
+- **Tomorrow (2026-10-25):** T062 first (no setup — YouTube creds already present), then the user sets up
+  Neon/Voyage/Anthropic/GCP/Vercel (see the START-HERE block + `infra/deploy/README.md`), then T063 (deploy +
+  live E2E on Huberman) and T065 (M4 sign-off).
 
 ### 2026-10-23 (end of day) — STOP for the day; US1–US4 done and pushed
 
